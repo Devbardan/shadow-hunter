@@ -2,10 +2,7 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Shadow Hunter - Mobile Souls</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -18,9 +15,7 @@
         touch-action: none;
         -webkit-tap-highlight-color: transparent;
       }
-      canvas {
-        display: block;
-      }
+      canvas { display: block; }
       #ui-layer {
         position: absolute;
         top: 0;
@@ -29,35 +24,38 @@
         height: 100%;
         pointer-events: none;
       }
-      .interactive {
-        pointer-events: auto;
-      }
+      .interactive { pointer-events: auto; }
 
-      /* Joystick Styles - Izquierda Abajo */
-      #joystick-container {
+      /* Joystick - Simple y funcional */
+      #joystick-zone {
         position: absolute;
         bottom: 50px;
         left: 40px;
         width: 120px;
         height: 120px;
+        z-index: 10;
+      }
+      #joystick-base {
+        position: absolute;
+        width: 100%;
+        height: 100%;
         background: rgba(255, 255, 255, 0.1);
         border-radius: 50%;
         border: 2px solid rgba(255, 255, 255, 0.2);
-        z-index: 10;
       }
       #joystick-knob {
         position: absolute;
-        top: 35px;
-        left: 35px;
+        top: 50%;
+        left: 50%;
         width: 50px;
         height: 50px;
+        margin: -25px 0 0 -25px;
         background: #ffaa00;
         border-radius: 50%;
         box-shadow: 0 0 15px rgba(255, 170, 0, 0.5);
-        transition: transform 0.1s;
+        transition: transform 0.05s;
       }
 
-      /* Actions Container - Derecha Abajo */
       #actions-container {
         position: absolute;
         bottom: 50px;
@@ -68,7 +66,6 @@
         z-index: 10;
       }
 
-      /* Action Buttons */
       .action-btn {
         width: 80px;
         height: 80px;
@@ -83,9 +80,9 @@
         font-size: 14px;
         transition: all 0.1s;
         cursor: pointer;
+        pointer-events: auto;
       }
-      .action-btn:active,
-      .btn-active {
+      .action-btn:active, .btn-active {
         background: #ffaa00;
         color: #000;
         transform: scale(0.95);
@@ -97,7 +94,6 @@
         pointer-events: none;
       }
 
-      /* Botón Dash más pequeño */
       .skill-btn-style {
         width: 60px;
         height: 60px;
@@ -114,16 +110,12 @@
         font-weight: bold;
         cursor: pointer;
       }
-      .stat-btn:hover {
-        background: #555;
-      }
       .quest-card {
         background: rgba(10, 10, 10, 0.95);
         border: 1px solid #ffaa00;
         box-shadow: 0 0 20px rgba(0, 0, 0, 1);
       }
 
-      /* Damage Text Animation */
       .damage-text {
         position: absolute;
         color: red;
@@ -143,119 +135,54 @@
         text-shadow: 1px 1px 0 #000;
       }
       @keyframes floatUp {
-        0% {
-          opacity: 1;
-          transform: translateY(0);
-        }
-        100% {
-          opacity: 0;
-          transform: translateY(-50px);
-        }
+        0% { opacity: 1; transform: translateY(0); }
+        100% { opacity: 0; transform: translateY(-50px); }
       }
     </style>
   </head>
   <body>
     <div id="ui-layer">
       <!-- Menú Principal -->
-      <div
-        id="lobby"
-        class="flex flex-col items-center justify-center h-full bg-slate-900 interactive"
-      >
-        <h1 class="text-4xl mb-2 font-black text-white italic tracking-tighter">
-          SHADOW HUNTER
-        </h1>
-        <p class="text-yellow-500 mb-8 font-bold text-[10px] tracking-[0.2em]">
-          MOBILE BATTLE RPG
-        </p>
+      <div id="lobby" class="flex flex-col items-center justify-center h-full bg-slate-900 interactive">
+        <h1 class="text-4xl mb-2 font-black text-white italic tracking-tighter">SHADOW HUNTER</h1>
+        <p class="text-yellow-500 mb-8 font-bold text-[10px] tracking-[0.2em]">MOBILE BATTLE RPG</p>
 
         <div class="flex flex-col gap-4 w-64">
-          <button
-            onclick="startGame('WARRIOR')"
-            class="bg-black border-2 border-red-700 p-4 text-white hover:bg-red-900 transition-all"
-          >
+          <button onclick="startGame('WARRIOR')" class="bg-black border-2 border-red-700 p-4 text-white hover:bg-red-900 transition-all">
             <span class="block font-bold">ESPADACHÍN</span>
             <span class="text-[10px] text-red-400">DASH & FUERZA</span>
           </button>
-          <button
-            onclick="startGame('SCOUT')"
-            class="bg-black border-2 border-green-700 p-4 text-white hover:bg-green-900 transition-all"
-          >
+          <button onclick="startGame('SCOUT')" class="bg-black border-2 border-green-700 p-4 text-white hover:bg-green-900 transition-all">
             <span class="block font-bold">TIRADOR</span>
             <span class="text-[10px] text-green-400">VELOCIDAD & DUALS</span>
           </button>
         </div>
-        <div class="mt-8 text-gray-500 text-[10px] text-center">
-          <p class="mb-2">CONTROLES PC</p>
-          <p>WASD: Mover | ESPACIO: Dash (Lvl 2+)</p>
-          <p>ENTER / CLICK: Atacar</p>
-        </div>
-        <button
-          onclick="toggleFullScreen()"
-          class="mt-4 text-yellow-600 text-[10px] underline"
-        >
-          PANTALLA COMPLETA
-        </button>
       </div>
 
-      <!-- HUD Móvil -->
-      <div
-        id="hud"
-        class="hidden h-full w-full flex flex-col justify-between p-4"
-      >
-        <!-- Superior: HP y Niveles -->
+      <!-- HUD -->
+      <div id="hud" class="hidden h-full w-full flex flex-col justify-between p-4">
+        <!-- Superior -->
         <div class="flex justify-between items-start">
           <div class="flex flex-col gap-1">
-            <div class="flex items-center gap-2">
-              <div
-                class="w-40 h-4 bg-gray-900 border border-gray-700 overflow-hidden relative"
-              >
-                <div
-                  id="hp-bar"
-                  class="h-full bg-red-600 transition-all duration-200"
-                  style="width: 100%"
-                ></div>
-                <span
-                  id="hp-text"
-                  class="absolute inset-0 text-[10px] text-white flex items-center justify-center font-bold"
-                  >100/100</span
-                >
-              </div>
+            <div class="w-40 h-4 bg-gray-900 border border-gray-700 overflow-hidden relative">
+              <div id="hp-bar" class="h-full bg-red-600 transition-all duration-200" style="width: 100%"></div>
+              <span id="hp-text" class="absolute inset-0 text-[10px] text-white flex items-center justify-center font-bold">100/100</span>
             </div>
-            <div class="flex items-center gap-2">
-              <div
-                class="w-32 h-2 bg-gray-900 border border-gray-700 overflow-hidden"
-              >
-                <div
-                  id="stamina-bar"
-                  class="h-full bg-green-600"
-                  style="width: 100%"
-                ></div>
-              </div>
+            <div class="w-32 h-2 bg-gray-900 border border-gray-700 overflow-hidden">
+              <div id="stamina-bar" class="h-full bg-green-600" style="width: 100%"></div>
             </div>
             <div class="text-[10px] text-yellow-500 font-bold mt-1">
-              LVL <span id="lvl-val">1</span> | ALMAS:
-              <span id="xp-val">0</span>
+              LVL <span id="lvl-val">1</span> | ALMAS: <span id="xp-val">0</span>
             </div>
           </div>
-
-          <button
-            onclick="toggleStats()"
-            class="interactive bg-black/50 border border-yellow-600 p-2 text-yellow-500 text-[10px] font-bold hover:bg-black"
-          >
-            ATRIBUTOS
-          </button>
+          <button onclick="toggleStats()" class="interactive bg-black/50 border border-yellow-600 p-2 text-yellow-500 text-[10px] font-bold">ATRIBUTOS</button>
         </div>
 
-        <!-- Centro: Panel de Atributos (Modal Móvil) -->
-        <div
-          id="attr-panel"
-          class="hidden self-center bg-black/90 border-2 border-yellow-600 p-6 text-white interactive w-72"
-        >
+        <!-- Panel Atributos -->
+        <div id="attr-panel" class="hidden self-center bg-black/90 border-2 border-yellow-600 p-6 text-white interactive w-72">
           <div class="flex justify-between mb-4">
             <h3 class="font-bold text-sm uppercase">Mejorar Personaje</h3>
-            <button onclick="toggleStats()" class="text-red-500 font-bold">
-              X
-            </button>
+            <button onclick="toggleStats()" class="text-red-500 font-bold">X</button>
           </div>
           <div class="flex flex-col gap-4">
             <div class="flex justify-between items-center">
@@ -279,173 +206,95 @@
                 <button onclick="upgradeStat('dex')" class="stat-btn">+</button>
               </div>
             </div>
-            <p class="text-[10px] text-yellow-600 text-center mt-2">
-              COSTO: 100 ALMAS
-            </p>
+            <p class="text-[10px] text-yellow-600 text-center mt-2">COSTO: 100 ALMAS</p>
           </div>
         </div>
 
-        <!-- Inferior: Controles Táctiles (Posicionamiento Absoluto) -->
-
-        <!-- Joystick Izquierda -->
-        <div id="joystick-container" class="interactive">
+        <!-- Joystick -->
+        <div id="joystick-zone" class="interactive">
+          <div id="joystick-base"></div>
           <div id="joystick-knob"></div>
         </div>
 
-        <!-- Botones Derecha -->
-        <div id="actions-container" class="interactive">
+        <!-- Botones -->
+        <div id="actions-container">
           <div class="relative">
-            <button
-              id="skill-btn"
-              onpointerdown="triggerSkill()"
-              class="action-btn skill-btn-style btn-disabled"
-            >
-              DASH
-            </button>
-            <span
-              id="lock-icon"
-              class="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] px-1 rounded-full"
-              >🔒 Lvl 2</span
-            >
+            <button id="skill-btn" onclick="triggerSkill()" class="action-btn skill-btn-style btn-disabled">DASH</button>
+            <span id="lock-icon" class="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] px-1 rounded-full">🔒 Lvl 2</span>
           </div>
-          <button
-            id="attack-btn"
-            onpointerdown="triggerAttack()"
-            class="action-btn"
-            style="border-color: #ff4400; color: #ff4400"
-          >
-            ATK
-          </button>
+          <button id="attack-btn" onclick="triggerAttack()" class="action-btn" style="border-color: #ff4400; color: #ff4400">ATK</button>
         </div>
 
-        <!-- Modal de Quest -->
-        <div
-          id="quest-notifier"
-          class="hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 quest-card p-6 interactive w-[85%] max-w-sm text-white z-50"
-        >
-          <p
-            id="quest-title"
-            class="text-yellow-500 font-bold text-lg mb-2 italic"
-          ></p>
+        <!-- Modal Quest -->
+        <div id="quest-notifier" class="hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 quest-card p-6 interactive w-[85%] max-w-sm text-white z-50">
+          <p id="quest-title" class="text-yellow-500 font-bold text-lg mb-2 italic"></p>
           <p id="quest-desc" class="text-xs text-gray-400 mb-6"></p>
           <div class="flex gap-2">
-            <button
-              onclick="acceptQuest()"
-              class="flex-1 bg-yellow-600 text-black font-bold py-3 text-sm hover:bg-yellow-500"
-            >
-              ACEPTAR PODER
-            </button>
-            <button
-              onclick="closeQuest()"
-              class="px-4 bg-gray-800 text-white font-bold py-3 text-sm hover:bg-gray-700"
-            >
-              IGNORAR
-            </button>
+            <button onclick="acceptQuest()" class="flex-1 bg-yellow-600 text-black font-bold py-3 text-sm hover:bg-yellow-500">ACEPTAR PODER</button>
+            <button onclick="closeQuest()" class="px-4 bg-gray-800 text-white font-bold py-3 text-sm hover:bg-gray-700">IGNORAR</button>
           </div>
         </div>
       </div>
     </div>
 
     <script>
-      let scene, camera, renderer, player, clock;
+      let scene, camera, renderer, player;
       let enemies = [];
       let worldSize = 120;
       let isGameRunning = false;
       let currentCamp = null;
       let keys = {};
 
-      // Estado del Jugador
       let playerStats = {
-        lvl: 1,
-        xp: 0,
-        vig: 10,
-        str: 10,
-        dex: 10,
-        hp: 100,
-        maxHp: 100,
-        stamina: 100,
-        maxStamina: 100,
-        role: "WARRIOR",
+        lvl: 1, xp: 0, vig: 10, str: 10, dex: 10,
+        hp: 100, maxHp: 100, stamina: 100, maxStamina: 100, role: "WARRIOR"
       };
 
-      // Control de Joystick - MEJORADO
-      let joystick = { 
-        active: false, 
-        x: 0, 
-        y: 0, 
-        startX: 0, 
-        startY: 0,
-        touchId: null, // Identificador único del toque
-        lastX: 0,      // Última posición X conocida
-        lastY: 0       // Última posición Y conocida
-      };
-      
+      // JOYSTICK SIMPLE - Solo guardamos dirección, no estado complejo
+      let joystick = { x: 0, y: 0 };
+      let joystickActive = false;
+
       const ROLES = {
-        WARRIOR: {
-          color: 0x990000,
-          speed: 0.12,
-          skillName: "DASH",
-          baseDmg: 15,
-        },
-        SCOUT: {
-          color: 0x009900,
-          speed: 0.16,
-          skillName: "SPRINT",
-          baseDmg: 10,
-        },
+        WARRIOR: { color: 0x990000, speed: 0.12, skillName: "DASH", baseDmg: 15 },
+        SCOUT: { color: 0x009900, speed: 0.16, skillName: "SPRINT", baseDmg: 10 }
       };
-
-      function toggleFullScreen() {
-        if (!document.fullscreenElement) {
-          document.documentElement.requestFullscreen().catch((e) => {});
-        } else {
-          document.exitFullscreen();
-        }
-      }
 
       function initScene() {
         scene = new THREE.Scene();
         scene.background = new THREE.Color(0x0a0a0a);
         scene.fog = new THREE.FogExp2(0x0a0a0a, 0.04);
-        camera = new THREE.PerspectiveCamera(
-          60,
-          window.innerWidth / window.innerHeight,
-          0.1,
-          1000
-        );
+        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         document.body.appendChild(renderer.domElement);
 
-        // Luces
         const amb = new THREE.AmbientLight(0xffffff, 0.2);
         scene.add(amb);
         const dir = new THREE.DirectionalLight(0xffaa00, 0.8);
         dir.position.set(50, 100, 20);
-        dir.castShadow = true;
         scene.add(dir);
 
         createWorld();
-        setupInput();
+        setupJoystick();
+        
+        window.addEventListener("keydown", (e) => {
+          keys[e.code] = true;
+          if (e.code === "Space") triggerSkill();
+          if (e.code === "Enter") triggerAttack();
+        });
+        window.addEventListener("keyup", (e) => keys[e.code] = false);
       }
 
       function createWorld() {
-        const floorGeo = new THREE.PlaneGeometry(worldSize, worldSize);
-        const floorMat = new THREE.MeshStandardMaterial({
-          color: 0x111111,
-          roughness: 0.8,
-        });
-        const floor = new THREE.Mesh(floorGeo, floorMat);
+        const floor = new THREE.Mesh(
+          new THREE.PlaneGeometry(worldSize, worldSize),
+          new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 })
+        );
         floor.rotation.x = -Math.PI / 2;
         scene.add(floor);
 
-        // Grid decorativo
-        const grid = new THREE.GridHelper(worldSize, 20, 0x333333, 0x222222);
-        grid.position.y = 0.01;
-        scene.add(grid);
+        scene.add(new THREE.GridHelper(worldSize, 20, 0x333333, 0x222222));
 
-        // Obstáculos
         for (let i = 0; i < 40; i++) {
           const h = 4 + Math.random() * 6;
           const w = 2 + Math.random() * 2;
@@ -453,42 +302,21 @@
             new THREE.BoxGeometry(w, h, w),
             new THREE.MeshStandardMaterial({ color: 0x222222 })
           );
-          m.position.set(
-            (Math.random() - 0.5) * worldSize,
-            h / 2,
-            (Math.random() - 0.5) * worldSize
-          );
-          m.userData = { isObstacle: true, radius: w / 1.5 }; // Para colisiones
+          m.position.set((Math.random() - 0.5) * worldSize, h / 2, (Math.random() - 0.5) * worldSize);
+          m.userData = { isObstacle: true, radius: w / 1.5 };
           scene.add(m);
         }
 
-        for (let i = 0; i < 8; i++)
-          spawnCamp(
-            (Math.random() - 0.5) * 100,
-            (Math.random() - 0.5) * 100,
-            i
-          );
+        for (let i = 0; i < 8; i++) spawnCamp((Math.random() - 0.5) * 100, (Math.random() - 0.5) * 100, i);
       }
 
       function spawnCamp(x, z, id) {
         const group = new THREE.Group();
-        const fire = new THREE.Mesh(
-          new THREE.CylinderGeometry(1.5, 2, 0.5, 8),
-          new THREE.MeshBasicMaterial({ color: 0x442200 })
-        );
+        const fire = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 2, 0.5, 8), new THREE.MeshBasicMaterial({ color: 0x442200 }));
         const light = new THREE.PointLight(0xff4400, 2, 10);
         light.position.y = 1;
         group.add(fire);
         group.add(light);
-
-        // Partícula de fuego simple
-        const flame = new THREE.Mesh(
-          new THREE.SphereGeometry(0.5, 4, 4),
-          new THREE.MeshBasicMaterial({ color: 0xffaa00 })
-        );
-        flame.position.y = 0.5;
-        group.add(flame);
-
         group.position.set(x, 0.25, z);
         group.userData = { isCamp: true, id: id, used: false };
         scene.add(group);
@@ -496,179 +324,92 @@
 
       function createCharacter(role, isEnemy = false) {
         const group = new THREE.Group();
-        const col = isEnemy
-          ? Math.random() > 0.5
-            ? ROLES.WARRIOR.color
-            : ROLES.SCOUT.color
-          : ROLES[role].color;
-
-        const body = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.5, 0.5, 1.5, 8),
-          new THREE.MeshStandardMaterial({ color: col })
-        );
+        const col = isEnemy ? (Math.random() > 0.5 ? ROLES.WARRIOR.color : ROLES.SCOUT.color) : ROLES[role].color;
+        
+        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 1.5, 8), new THREE.MeshStandardMaterial({ color: col }));
         body.position.y = 0.75;
         group.add(body);
-
-        const head = new THREE.Mesh(
-          new THREE.SphereGeometry(0.35, 8, 8),
-          new THREE.MeshStandardMaterial({ color: 0xffffff })
-        );
+        
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 8), new THREE.MeshStandardMaterial({ color: 0xffffff }));
         head.position.set(0, 1.6, 0.2);
         group.add(head);
 
-        // Barra de vida para enemigos
         if (isEnemy) {
-          const hpBg = new THREE.Mesh(
-            new THREE.PlaneGeometry(1, 0.1),
-            new THREE.MeshBasicMaterial({ color: 0x000000 })
-          );
-          hpBg.position.set(0, 2.2, 0);
-          group.add(hpBg);
-          const hpFg = new THREE.Mesh(
-            new THREE.PlaneGeometry(1, 0.1),
-            new THREE.MeshBasicMaterial({ color: 0xff0000 })
-          );
+          const hpFg = new THREE.Mesh(new THREE.PlaneGeometry(1, 0.1), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
           hpFg.position.set(0, 2.2, 0.01);
           group.userData.hpBar = hpFg;
           group.add(hpFg);
-        }
-
-        group.position.set(
-          (Math.random() - 0.5) * 80,
-          0,
-          (Math.random() - 0.5) * 80
-        );
-
-        if (isEnemy) {
-          // Stats del enemigo (simulando jugadores)
+          
           const lvl = 1 + Math.floor(Math.random() * 3);
           group.userData = {
-            isEnemy: true,
-            hp: 80 + lvl * 20,
-            maxHp: 80 + lvl * 20,
-            xpReward: 50 * lvl,
-            targetPos: new THREE.Vector3(
-              (Math.random() - 0.5) * 100,
-              0,
-              (Math.random() - 0.5) * 100
-            ),
+            isEnemy: true, hp: 80 + lvl * 20, maxHp: 80 + lvl * 20, xpReward: 50 * lvl,
+            targetPos: new THREE.Vector3((Math.random() - 0.5) * 100, 0, (Math.random() - 0.5) * 100)
           };
         }
 
+        group.position.set((Math.random() - 0.5) * 80, 0, (Math.random() - 0.5) * 80);
         scene.add(group);
         return group;
       }
 
-      function setupInput() {
-        // Joystick - SISTEMA MEJORADO
-        const container = document.getElementById("joystick-container");
+      // JOYSTICK SIMPLE Y DIRECTO
+      function setupJoystick() {
+        const zone = document.getElementById("joystick-zone");
         const knob = document.getElementById("joystick-knob");
+        const centerX = 60; // 120px / 2
+        const centerY = 60;
+        const maxDist = 40;
 
-        const handleStart = (e) => {
-          e.preventDefault();
-          const touch = e.touches ? e.touches[0] : e;
+        function updateJoystick(clientX, clientY) {
+          const rect = zone.getBoundingClientRect();
+          const x = clientX - rect.left - centerX;
+          const y = clientY - rect.top - centerY;
+          const distance = Math.min(Math.sqrt(x*x + y*y), maxDist);
+          const angle = Math.atan2(y, x);
           
-          // Guardar el identificador del toque para seguimiento
-          joystick.touchId = touch.identifier || 'mouse';
-          joystick.active = true;
+          const knobX = Math.cos(angle) * distance;
+          const knobY = Math.sin(angle) * distance;
           
-          const rect = container.getBoundingClientRect();
-          joystick.startX = rect.left + rect.width / 2;
-          joystick.startY = rect.top + rect.height / 2;
+          knob.style.transform = `translate(${knobX}px, ${knobY}px)`;
           
-          // Actualizar inmediatamente la posición
-          updateJoystickPosition(touch);
-        };
-
-        const handleMove = (e) => {
-          if (!joystick.active) return;
-          e.preventDefault();
-          
-          // Encontrar el toque correcto si es multitouch
-          let touch;
-          if (e.touches) {
-            for (let i = 0; i < e.touches.length; i++) {
-              if (e.touches[i].identifier === joystick.touchId) {
-                touch = e.touches[i];
-                break;
-              }
-            }
-            if (!touch) return; // No encontramos nuestro toque
-          } else {
-            touch = e;
-          }
-          
-          updateJoystickPosition(touch);
-        };
-
-        const handleEnd = (e) => {
-          if (!joystick.active) return;
-          
-          // Verificar si es nuestro toque el que terminó
-          if (e.changedTouches) {
-            let found = false;
-            for (let i = 0; i < e.changedTouches.length; i++) {
-              if (e.changedTouches[i].identifier === joystick.touchId) {
-                found = true;
-                break;
-              }
-            }
-            if (!found) return;
-          }
-          
-          resetJoystick();
-        };
-
-        function updateJoystickPosition(touch) {
-          const dx = touch.clientX - joystick.startX;
-          const dy = touch.clientY - joystick.startY;
-          const dist = Math.min(Math.sqrt(dx * dx + dy * dy), 50);
-          const angle = Math.atan2(dy, dx);
-
-          joystick.x = (Math.cos(angle) * dist) / 50;
-          joystick.y = (Math.sin(angle) * dist) / 50;
-          
-          // Guardar últimas posiciones válidas
-          joystick.lastX = joystick.x;
-          joystick.lastY = joystick.y;
-
-          knob.style.transform = `translate(${joystick.x * 35}px, ${
-            joystick.y * 35
-          }px)`;
+          // Normalizar -1 a 1
+          joystick.x = knobX / maxDist;
+          joystick.y = knobY / maxDist;
         }
 
-        function resetJoystick() {
-          joystick.active = false;
+        zone.addEventListener("touchstart", (e) => {
+          e.preventDefault();
+          joystickActive = true;
+          updateJoystick(e.touches[0].clientX, e.touches[0].clientY);
+        }, {passive: false});
+
+        zone.addEventListener("touchmove", (e) => {
+          e.preventDefault();
+          if (joystickActive) {
+            updateJoystick(e.touches[0].clientX, e.touches[0].clientY);
+          }
+        }, {passive: false});
+
+        const endJoystick = (e) => {
+          e.preventDefault();
+          joystickActive = false;
           joystick.x = 0;
           joystick.y = 0;
-          joystick.touchId = null;
-          knob.style.transform = "translate(0,0)";
-        }
+          knob.style.transform = "translate(0px, 0px)";
+        };
 
-        // Usar pointer events para mejor compatibilidad
-        container.addEventListener("touchstart", handleStart, {passive: false});
-        container.addEventListener("touchmove", handleMove, {passive: false});
-        window.addEventListener("touchend", handleEnd);
-        window.addEventListener("touchcancel", handleEnd);
-        
-        // Mouse como fallback
-        container.addEventListener("mousedown", handleStart);
-        window.addEventListener("mousemove", handleMove);
-        window.addEventListener("mouseup", handleEnd);
+        zone.addEventListener("touchend", endJoystick);
+        zone.addEventListener("touchcancel", endJoystick);
 
-        // Teclado (PC)
-        window.addEventListener("keydown", (e) => {
-          keys[e.code] = true;
-          if (e.code === "Space") triggerSkill();
-          if (e.code === "Enter") triggerAttack();
+        // Mouse
+        zone.addEventListener("mousedown", (e) => {
+          joystickActive = true;
+          updateJoystick(e.clientX, e.clientY);
         });
-        window.addEventListener("keyup", (e) => (keys[e.code] = false));
-
-        // Mouse Click Attack
-        window.addEventListener("mousedown", (e) => {
-          // Solo si no estamos tocando UI
-          if (e.target.tagName !== "BUTTON") triggerAttack();
+        window.addEventListener("mousemove", (e) => {
+          if (joystickActive) updateJoystick(e.clientX, e.clientY);
         });
+        window.addEventListener("mouseup", endJoystick);
       }
 
       function startGame(role) {
@@ -677,148 +418,88 @@
         document.getElementById("skill-btn").innerText = ROLES[role].skillName;
 
         player = createCharacter(role);
-        player.userData.radius = 0.5; // Hitbox del jugador
+        player.userData.radius = 0.5;
         playerStats.role = role;
-
         isGameRunning = true;
 
-        for (let i = 0; i < 9; i++) {
-          enemies.push(createCharacter("WARRIOR", true));
-        }
+        for (let i = 0; i < 9; i++) enemies.push(createCharacter("WARRIOR", true));
         updateHUD();
         animate();
       }
 
-      // Acciones
+      // DASH ARREGLADO - No tocamos el joystick, solo movemos al jugador
       function triggerSkill() {
-        if (!isGameRunning) return;
-
-        // Restricción de Nivel
-        if (playerStats.lvl < 2) {
-          showFloatingText("¡Necesitas Nivel 2!", player.position, "red");
+        if (!isGameRunning || playerStats.lvl < 2) {
+          if (playerStats.lvl < 2) showFloatingText("¡Necesitas Nivel 2!", player.position, "red");
           return;
         }
 
         if (playerStats.stamina >= 40) {
           playerStats.stamina -= 40;
-          // Visual Dash
-          const dashMesh = player.children[0].clone();
-          dashMesh.material = dashMesh.material.clone();
-          dashMesh.material.transparent = true;
-          dashMesh.material.opacity = 0.5;
-          dashMesh.position.copy(player.position);
-          scene.add(dashMesh);
-          setTimeout(() => scene.remove(dashMesh), 200);
+          
+          // Efecto visual
+          const ghost = player.children[0].clone();
+          ghost.material = ghost.material.clone();
+          ghost.material.transparent = true;
+          ghost.material.opacity = 0.3;
+          ghost.position.copy(player.position);
+          scene.add(ghost);
+          setTimeout(() => scene.remove(ghost), 150);
 
-          // Boost - DASH MEJORADO
-          const dir = new THREE.Vector3(0, 0, 1).applyQuaternion(
-            player.quaternion
-          );
+          // MOVER JUGADOR - Esto NO afecta el joystick
+          const dir = new THREE.Vector3(0, 0, 1).applyQuaternion(player.quaternion);
+          player.position.addScaledVector(dir, 5);
           
-          // Guardar el estado del joystick ANTES del dash
-          const wasJoystickActive = joystick.active;
-          const lastJoystickX = joystick.x;
-          const lastJoystickY = joystick.y;
-          
-          player.position.addScaledVector(dir, 5); // Teleport corto
-          
-          // Restaurar el estado del joystick INMEDIATAMENTE después del dash
-          // Esto evita que el input se pierda durante el teletransporte
-          if (wasJoystickActive) {
-            joystick.active = true;
-            joystick.x = lastJoystickX;
-            joystick.y = lastJoystickY;
-          }
+          // El joystick sigue como estaba, no lo tocamos
         }
       }
 
       function triggerAttack() {
-        if (!isGameRunning) return;
-
-        // Animación visual del botón
-        const btn = document.getElementById("attack-btn");
-        btn.classList.add("btn-active");
-        setTimeout(() => btn.classList.remove("btn-active"), 100);
-
-        if (playerStats.stamina < 10) return;
+        if (!isGameRunning || playerStats.stamina < 10) return;
         playerStats.stamina -= 10;
 
-        // Visual Attack (Onda)
+        document.getElementById("attack-btn").classList.add("btn-active");
+        setTimeout(() => document.getElementById("attack-btn").classList.remove("btn-active"), 100);
+
         const wave = new THREE.Mesh(
           new THREE.RingGeometry(0.5, 2.5, 3),
-          new THREE.MeshBasicMaterial({
-            color: 0xffaa00,
-            transparent: true,
-            opacity: 0.8,
-            side: THREE.DoubleSide,
-          })
+          new THREE.MeshBasicMaterial({ color: 0xffaa00, transparent: true, opacity: 0.8, side: THREE.DoubleSide })
         );
         wave.rotation.x = -Math.PI / 2;
         wave.position.copy(player.position);
         wave.position.y = 0.5;
-        // Ajustar rotación para coincidir con el jugador
         wave.quaternion.copy(player.quaternion);
-        wave.rotateX(-Math.PI / 2); // Corregir orientación del plano
-
+        wave.rotateX(-Math.PI / 2);
         scene.add(wave);
         setTimeout(() => scene.remove(wave), 150);
 
-        // Lógica de Hitbox (Cono frontal)
-        const attackRange = 3;
-        const attackAngle = Math.PI / 2; // 90 grados
-        const playerDir = new THREE.Vector3(0, 0, 1)
-          .applyQuaternion(player.quaternion)
-          .normalize();
-
+        const playerDir = new THREE.Vector3(0, 0, 1).applyQuaternion(player.quaternion).normalize();
+        
         enemies.forEach((enemy, index) => {
-          const dist = player.position.distanceTo(enemy.position);
-          if (dist < attackRange) {
-            const enemyDir = new THREE.Vector3()
-              .subVectors(enemy.position, player.position)
-              .normalize();
-            const angle = playerDir.angleTo(enemyDir);
-
-            if (angle < attackAngle) {
-              // HIT!
+          if (player.position.distanceTo(enemy.position) < 3) {
+            const enemyDir = new THREE.Vector3().subVectors(enemy.position, player.position).normalize();
+            if (playerDir.angleTo(enemyDir) < Math.PI / 2) {
               const dmg = playerStats.str + ROLES[playerStats.role].baseDmg;
               enemy.userData.hp -= dmg;
               showFloatingText(`-${dmg}`, enemy.position, "red");
-
-              // Pushback ligero
-              const push = enemyDir.multiplyScalar(1);
-              enemy.position.add(push);
-
-              // Actualizar barra vida enemigo
-              const hpPercent = Math.max(
-                0,
-                enemy.userData.hp / enemy.userData.maxHp
-              );
-              enemy.userData.hpBar.scale.x = hpPercent;
-
-              if (enemy.userData.hp <= 0) {
-                killEnemy(enemy, index);
-              }
+              
+              enemy.position.add(enemyDir.multiplyScalar(1));
+              enemy.userData.hpBar.scale.x = Math.max(0, enemy.userData.hp / enemy.userData.maxHp);
+              
+              if (enemy.userData.hp <= 0) killEnemy(enemy, index);
             }
           }
         });
       }
 
       function killEnemy(enemy, index) {
-        // Robar XP
         const xpGain = enemy.userData.xpReward;
         playerStats.xp += xpGain;
         showFloatingText(`+${xpGain} ALMAS`, player.position, "gold");
-
-        // Eliminar visualmente
         scene.remove(enemy);
         enemies.splice(index, 1);
-
         updateHUD();
-
-        // Respawn (Simulación Multijugador)
-        setTimeout(() => {
-          enemies.push(createCharacter("WARRIOR", true));
-        }, 3000);
+        setTimeout(() => enemies.push(createCharacter("WARRIOR", true)), 3000);
       }
 
       function showFloatingText(text, pos, color) {
@@ -826,23 +507,17 @@
         div.innerText = text;
         div.className = color === "gold" ? "xp-text" : "damage-text";
         div.style.color = color;
-
-        // Proyectar posición 3D a 2D
         const vec = pos.clone();
         vec.y += 2;
         vec.project(camera);
-        const x = (vec.x * 0.5 + 0.5) * window.innerWidth;
-        const y = (-(vec.y * 0.5) + 0.5) * window.innerHeight;
-
-        div.style.left = `${x}px`;
-        div.style.top = `${y}px`;
+        div.style.left = `${(vec.x * 0.5 + 0.5) * window.innerWidth}px`;
+        div.style.top = `${(-(vec.y * 0.5) + 0.5) * window.innerHeight}px`;
         document.body.appendChild(div);
         setTimeout(() => div.remove(), 1500);
       }
 
       function toggleStats() {
-        const panel = document.getElementById("attr-panel");
-        panel.classList.toggle("hidden");
+        document.getElementById("attr-panel").classList.toggle("hidden");
       }
 
       function upgradeStat(stat) {
@@ -860,29 +535,14 @@
       function acceptQuest() {
         if (!currentCamp) return;
         currentCamp.userData.used = true;
-        currentCamp.children[1].intensity = 0; // Apagar luz
-
+        currentCamp.children[1].intensity = 0;
         playerStats.xp += 150;
         playerStats.lvl++;
-
-        const isWarrior = playerStats.role === "WARRIOR";
-        if (isWarrior) playerStats.str += 5;
+        if (playerStats.role === "WARRIOR") playerStats.str += 5;
         else playerStats.dex += 5;
-
         showFloatingText("¡PODER AUMENTADO!", player.position, "yellow");
-
         closeQuest();
         updateHUD();
-
-        // Bloquear otro campamento
-        const others = scene.children.filter(
-          (c) => c.userData.isCamp && !c.userData.used
-        );
-        if (others.length > 0) {
-          const blocked = others[Math.floor(Math.random() * others.length)];
-          blocked.userData.used = true;
-          blocked.children[0].material.color.setHex(0x333333); // Gris visual
-        }
       }
 
       function closeQuest() {
@@ -891,45 +551,30 @@
       }
 
       function updateHUD() {
-        const hpPct = (playerStats.hp / playerStats.maxHp) * 100;
-        document.getElementById("hp-bar").style.width = `${hpPct}%`;
-        document.getElementById("hp-text").innerText = `${Math.floor(
-          playerStats.hp
-        )}/${playerStats.maxHp}`;
-        document.getElementById("stamina-bar").style.width = `${
-          (playerStats.stamina / playerStats.maxStamina) * 100
-        }%`;
+        document.getElementById("hp-bar").style.width = `${(playerStats.hp / playerStats.maxHp) * 100}%`;
+        document.getElementById("hp-text").innerText = `${Math.floor(playerStats.hp)}/${playerStats.maxHp}`;
+        document.getElementById("stamina-bar").style.width = `${(playerStats.stamina / playerStats.maxStamina) * 100}%`;
         document.getElementById("xp-val").innerText = playerStats.xp;
         document.getElementById("lvl-val").innerText = playerStats.lvl;
-
         document.getElementById("stat-vig").innerText = playerStats.vig;
         document.getElementById("stat-str").innerText = playerStats.str;
         document.getElementById("stat-dex").innerText = playerStats.dex;
-
-        // Skill Unlock Visual
-        const skillBtn = document.getElementById("skill-btn");
-        const lockIcon = document.getElementById("lock-icon");
+        
         if (playerStats.lvl >= 2) {
-          skillBtn.classList.remove("btn-disabled");
-          if (lockIcon) lockIcon.style.display = "none";
+          document.getElementById("skill-btn").classList.remove("btn-disabled");
+          document.getElementById("lock-icon").style.display = "none";
         }
       }
 
       function checkCollisions(newPos) {
-        // Colisión con Obstáculos
         for (let obj of scene.children) {
           if (obj.userData.isObstacle) {
-            const dist = newPos.distanceTo(
-              new THREE.Vector3(obj.position.x, 0, obj.position.z)
-            );
-            // Radio jugador (0.5) + Radio objeto
+            const dist = newPos.distanceTo(new THREE.Vector3(obj.position.x, 0, obj.position.z));
             if (dist < 0.5 + obj.userData.radius) return true;
           }
         }
-        // Colisión con Enemigos (Cuerpo a cuerpo)
         for (let en of enemies) {
-          const dist = newPos.distanceTo(en.position);
-          if (dist < 1.0) return true; // Bloqueo físico
+          if (newPos.distanceTo(en.position) < 1.0) return true;
         }
         return false;
       }
@@ -938,107 +583,55 @@
         if (!isGameRunning) return;
         requestAnimationFrame(animate);
 
-        let moveX = joystick.x;
-        let moveY = joystick.y;
+        // Input: Joystick tiene prioridad, luego teclado
+        let moveX = joystickActive ? joystick.x : 0;
+        let moveY = joystickActive ? joystick.y : 0;
 
-        // Input PC Override
         if (keys["KeyW"] || keys["ArrowUp"]) moveY = -1;
         if (keys["KeyS"] || keys["ArrowDown"]) moveY = 1;
         if (keys["KeyA"] || keys["ArrowLeft"]) moveX = -1;
         if (keys["KeyD"] || keys["ArrowRight"]) moveX = 1;
 
-        // Movimiento Jugador
         if (moveX !== 0 || moveY !== 0) {
-          const speed =
-            ROLES[playerStats.role].speed * (1 + playerStats.dex / 50);
-
-          // Vector de movimiento deseado
-          const moveVec = new THREE.Vector3(moveX, 0, moveY)
-            .normalize()
-            .multiplyScalar(speed);
-
-          // Predicción de posición
+          const speed = ROLES[playerStats.role].speed * (1 + playerStats.dex / 50);
+          const moveVec = new THREE.Vector3(moveX, 0, moveY).normalize().multiplyScalar(speed);
           const nextPos = player.position.clone().add(moveVec);
-
-          // Chequear colisiones antes de mover
+          
           if (!checkCollisions(nextPos)) {
             player.position.add(moveVec);
           }
-
-          // Rotación suave
-          const targetRotation = Math.atan2(moveX, moveY);
-          // Interpolación simple de rotación (lerp no es ideal para ángulos pero sirve aquí)
-          player.rotation.y = targetRotation; // Directa para respuesta rápida
-
-          // Huellas
-          if (Math.random() > 0.95) {
-            const footprint = new THREE.Mesh(
-              new THREE.CircleGeometry(0.15, 6),
-              new THREE.MeshBasicMaterial({
-                color: 0x222222,
-                transparent: true,
-                opacity: 0.5,
-              })
-            );
-            footprint.rotation.x = -Math.PI / 2;
-            footprint.position.set(player.position.x, 0.02, player.position.z);
-            scene.add(footprint);
-            setTimeout(() => scene.remove(footprint), 5000);
-          }
+          
+          player.rotation.y = Math.atan2(moveX, moveY);
         }
 
-        camera.position.set(
-          player.position.x,
-          player.position.y + 20,
-          player.position.z + 15
-        );
+        camera.position.set(player.position.x, player.position.y + 20, player.position.z + 15);
         camera.lookAt(player.position);
-
+        
         if (playerStats.stamina < 100) playerStats.stamina += 0.3;
 
-        // Lógica Enemigos (Perseguir si cerca)
         enemies.forEach((en) => {
           const dist = en.position.distanceTo(player.position);
           if (dist < 15) {
-            // Perseguir jugador
-            const dir = new THREE.Vector3()
-              .subVectors(player.position, en.position)
-              .normalize();
+            const dir = new THREE.Vector3().subVectors(player.position, en.position).normalize();
             const nextPos = en.position.clone().addScaledVector(dir, 0.05);
-
-            // Evitar superponerse al jugador
-            if (nextPos.distanceTo(player.position) > 1.0) {
-              en.position.copy(nextPos);
-            }
+            if (nextPos.distanceTo(player.position) > 1.0) en.position.copy(nextPos);
             en.lookAt(player.position);
           } else {
-            // Patrullar
-            const dir = new THREE.Vector3()
-              .subVectors(en.userData.targetPos, en.position)
-              .normalize();
+            const dir = new THREE.Vector3().subVectors(en.userData.targetPos, en.position).normalize();
             en.position.addScaledVector(dir, 0.02);
             if (en.position.distanceTo(en.userData.targetPos) < 2) {
-              en.userData.targetPos.set(
-                (Math.random() - 0.5) * 100,
-                0,
-                (Math.random() - 0.5) * 100
-              );
+              en.userData.targetPos.set((Math.random() - 0.5) * 100, 0, (Math.random() - 0.5) * 100);
             }
           }
         });
 
-        // Detección de Campamentos
         scene.children.forEach((c) => {
           if (c.userData.isCamp && !c.userData.used && !currentCamp) {
             if (player.position.distanceTo(c.position) < 3) {
               currentCamp = c;
-              document
-                .getElementById("quest-notifier")
-                .classList.remove("hidden");
-              document.getElementById("quest-title").innerText =
-                "CAMPAMENTO DE PODER";
-              document.getElementById("quest-desc").innerText =
-                "Absorber el poder de este lugar aumentará tu nivel y estadísticas drásticamente.";
+              document.getElementById("quest-notifier").classList.remove("hidden");
+              document.getElementById("quest-title").innerText = "CAMPAMENTO DE PODER";
+              document.getElementById("quest-desc").innerText = "Absorber el poder de este lugar aumentará tu nivel y estadísticas drásticamente.";
             }
           }
         });
