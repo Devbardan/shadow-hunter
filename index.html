@@ -54,7 +54,6 @@
         background: #ffaa00;
         border-radius: 50%;
         box-shadow: 0 0 15px rgba(255, 170, 0, 0.5);
-        transition: transform 0.1s;
       }
 
       /* Actions Container - Derecha Abajo */
@@ -76,13 +75,11 @@
         background: rgba(255, 255, 255, 0.1);
         border: 2px solid #ffaa00;
         display: flex;
-        align-items: center;
-        justify-content: center;
+        items-center: justify-center;
         color: #ffaa00;
         font-weight: bold;
         font-size: 14px;
         transition: all 0.1s;
-        cursor: pointer;
       }
       .action-btn:active,
       .btn-active {
@@ -112,10 +109,6 @@
         padding: 4px 12px;
         border-radius: 4px;
         font-weight: bold;
-        cursor: pointer;
-      }
-      .stat-btn:hover {
-        background: #555;
       }
       .quest-card {
         background: rgba(10, 10, 10, 0.95);
@@ -368,18 +361,8 @@
         role: "WARRIOR",
       };
 
-      // Control de Joystick - MEJORADO
-      let joystick = { 
-        active: false, 
-        x: 0, 
-        y: 0, 
-        startX: 0, 
-        startY: 0,
-        touchId: null, // Identificador único del toque
-        lastX: 0,      // Última posición X conocida
-        lastY: 0       // Última posición Y conocida
-      };
-      
+      // Control de Joystick
+      let joystick = { active: false, x: 0, y: 0, startX: 0, startY: 0 };
       const ROLES = {
         WARRIOR: {
           color: 0x990000,
@@ -560,66 +543,21 @@
       }
 
       function setupInput() {
-        // Joystick - SISTEMA MEJORADO
+        // Joystick
         const container = document.getElementById("joystick-container");
         const knob = document.getElementById("joystick-knob");
 
         const handleStart = (e) => {
-          e.preventDefault();
-          const touch = e.touches ? e.touches[0] : e;
-          
-          // Guardar el identificador del toque para seguimiento
-          joystick.touchId = touch.identifier || 'mouse';
           joystick.active = true;
-          
+          const touch = e.touches ? e.touches[0] : e;
           const rect = container.getBoundingClientRect();
           joystick.startX = rect.left + rect.width / 2;
           joystick.startY = rect.top + rect.height / 2;
-          
-          // Actualizar inmediatamente la posición
-          updateJoystickPosition(touch);
         };
 
         const handleMove = (e) => {
           if (!joystick.active) return;
-          e.preventDefault();
-          
-          // Encontrar el toque correcto si es multitouch
-          let touch;
-          if (e.touches) {
-            for (let i = 0; i < e.touches.length; i++) {
-              if (e.touches[i].identifier === joystick.touchId) {
-                touch = e.touches[i];
-                break;
-              }
-            }
-            if (!touch) return; // No encontramos nuestro toque
-          } else {
-            touch = e;
-          }
-          
-          updateJoystickPosition(touch);
-        };
-
-        const handleEnd = (e) => {
-          if (!joystick.active) return;
-          
-          // Verificar si es nuestro toque el que terminó
-          if (e.changedTouches) {
-            let found = false;
-            for (let i = 0; i < e.changedTouches.length; i++) {
-              if (e.changedTouches[i].identifier === joystick.touchId) {
-                found = true;
-                break;
-              }
-            }
-            if (!found) return;
-          }
-          
-          resetJoystick();
-        };
-
-        function updateJoystickPosition(touch) {
+          const touch = e.touches ? e.touches[0] : e;
           const dx = touch.clientX - joystick.startX;
           const dy = touch.clientY - joystick.startY;
           const dist = Math.min(Math.sqrt(dx * dx + dy * dy), 50);
@@ -627,34 +565,22 @@
 
           joystick.x = (Math.cos(angle) * dist) / 50;
           joystick.y = (Math.sin(angle) * dist) / 50;
-          
-          // Guardar últimas posiciones válidas
-          joystick.lastX = joystick.x;
-          joystick.lastY = joystick.y;
 
-          knob.style.transform = `translate(${joystick.x * 35}px, ${
-            joystick.y * 35
+          knob.style.transform = `translate(${joystick.x * 50}px, ${
+            joystick.y * 50
           }px)`;
-        }
+        };
 
-        function resetJoystick() {
+        const handleEnd = () => {
           joystick.active = false;
           joystick.x = 0;
           joystick.y = 0;
-          joystick.touchId = null;
           knob.style.transform = "translate(0,0)";
-        }
+        };
 
-        // Usar pointer events para mejor compatibilidad
-        container.addEventListener("touchstart", handleStart, {passive: false});
-        container.addEventListener("touchmove", handleMove, {passive: false});
+        container.addEventListener("touchstart", handleStart);
+        window.addEventListener("touchmove", handleMove);
         window.addEventListener("touchend", handleEnd);
-        window.addEventListener("touchcancel", handleEnd);
-        
-        // Mouse como fallback
-        container.addEventListener("mousedown", handleStart);
-        window.addEventListener("mousemove", handleMove);
-        window.addEventListener("mouseup", handleEnd);
 
         // Teclado (PC)
         window.addEventListener("keydown", (e) => {
@@ -710,25 +636,11 @@
           scene.add(dashMesh);
           setTimeout(() => scene.remove(dashMesh), 200);
 
-          // Boost - DASH MEJORADO
+          // Boost
           const dir = new THREE.Vector3(0, 0, 1).applyQuaternion(
             player.quaternion
           );
-          
-          // Guardar el estado del joystick ANTES del dash
-          const wasJoystickActive = joystick.active;
-          const lastJoystickX = joystick.x;
-          const lastJoystickY = joystick.y;
-          
           player.position.addScaledVector(dir, 5); // Teleport corto
-          
-          // Restaurar el estado del joystick INMEDIATAMENTE después del dash
-          // Esto evita que el input se pierda durante el teletransporte
-          if (wasJoystickActive) {
-            joystick.active = true;
-            joystick.x = lastJoystickX;
-            joystick.y = lastJoystickY;
-          }
         }
       }
 
