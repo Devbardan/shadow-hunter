@@ -1,656 +1,970 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Shadow Hunter - Battle Royale</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Shadow Hunter - Mobile Souls</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Consolas', monospace; touch-action: none; -webkit-tap-highlight-color: transparent; user-select: none; }
-        canvas { display: block; }
-        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-        .interactive { pointer-events: auto; }
-        
-        /* Minimapa */
-        #minimap-container { position: absolute; top: 20px; left: 20px; width: 120px; height: 120px; background: rgba(0,0,0,0.6); border: 2px solid #ffaa00; border-radius: 50%; overflow: hidden; z-index: 20; }
-        #minimap-canvas { width: 100%; height: 100%; }
+      body {
+        margin: 0;
+        overflow: hidden;
+        background-color: #000;
+        font-family: "Consolas", monospace;
+        touch-action: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      canvas {
+        display: block;
+      }
+      #ui-layer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+      .interactive {
+        pointer-events: auto;
+      }
 
-        /* Joystick - Izquierda Abajo */
-        #joystick-container { position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.05); border-radius: 50%; border: 2px solid rgba(255,255,255,0.1); z-index: 10; }
-        #joystick-knob { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: rgba(255, 170, 0, 0.8); border-radius: 50%; box-shadow: 0 0 10px rgba(255,170,0,0.3); }
-        
-        /* Action Buttons - Grid en rombo */
-        #actions-container { position: absolute; bottom: 30px; right: 30px; width: 180px; height: 180px; z-index: 10; }
-        
-        .skill-btn { position: absolute; border-radius: 50%; background: rgba(0,0,0,0.6); border: 2px solid #555; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; transition: transform 0.1s; }
-        .skill-btn:active { background: #ffaa00; color: black; transform: scale(0.9); }
-        .skill-btn:disabled { opacity: 0.3; border-color: #333; }
+      /* Joystick Styles - Izquierda Abajo */
+      #joystick-container {
+        position: absolute;
+        bottom: 50px;
+        left: 40px;
+        width: 120px;
+        height: 120px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        z-index: 10;
+      }
+      #joystick-knob {
+        position: absolute;
+        top: 35px;
+        left: 35px;
+        width: 50px;
+        height: 50px;
+        background: #ffaa00;
+        border-radius: 50%;
+        box-shadow: 0 0 15px rgba(255, 170, 0, 0.5);
+      }
 
-        /* Posiciones Botones */
-        #btn-attack { width: 80px; height: 80px; bottom: 0; right: 0; border-color: #ff4400; font-size: 14px; background: rgba(50, 10, 0, 0.6); } /* Principal */
-        #btn-dash { width: 60px; height: 60px; bottom: 20px; right: 90px; border-color: #00aaff; font-size: 10px; } /* Skill 1 */
-        #btn-skill2 { width: 50px; height: 50px; bottom: 90px; right: 50px; border-color: #00ff00; font-size: 10px; } /* Skill 2 */
-        #btn-skill3 { width: 50px; height: 50px; bottom: 100px; right: 0px; border-color: #aa00ff; font-size: 10px; } /* Skill 3 */
+      /* Actions Container - Derecha Abajo */
+      #actions-container {
+        position: absolute;
+        bottom: 50px;
+        right: 40px;
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        z-index: 10;
+      }
 
-        /* Floating Text */
-        .damage-text { position: absolute; color: red; font-weight: 900; font-size: 18px; pointer-events: none; animation: floatUp 0.8s forwards; text-shadow: 2px 2px 0 #000; }
-        .xp-text { position: absolute; color: gold; font-weight: 900; font-size: 20px; pointer-events: none; animation: floatUp 1.5s forwards; text-shadow: 2px 2px 0 #000; }
-        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-60px) scale(1.2); } }
+      /* Action Buttons */
+      .action-btn {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid #ffaa00;
+        display: flex;
+        items-center: justify-center;
+        color: #ffaa00;
+        font-weight: bold;
+        font-size: 14px;
+        transition: all 0.1s;
+      }
+      .action-btn:active,
+      .btn-active {
+        background: #ffaa00;
+        color: #000;
+        transform: scale(0.95);
+      }
+      .btn-disabled {
+        opacity: 0.3;
+        border-color: #555;
+        color: #555;
+        pointer-events: none;
+      }
 
-        /* HP Bars (HTML Overlay for Enemies) */
-        .hp-container { position: absolute; width: 40px; height: 6px; background: red; pointer-events: none; transform: translate(-50%, -50%); display: none; border: 1px solid black; }
-        .hp-fill { height: 100%; background: #00ff00; width: 100%; }
+      /* Botón Dash más pequeño */
+      .skill-btn-style {
+        width: 60px;
+        height: 60px;
+        font-size: 10px;
+        border-color: #00aaff;
+        color: #00aaff;
+      }
+
+      .stat-btn {
+        background: #444;
+        color: #fff;
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-weight: bold;
+      }
+      .quest-card {
+        background: rgba(10, 10, 10, 0.95);
+        border: 1px solid #ffaa00;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 1);
+      }
+
+      /* Damage Text Animation */
+      .damage-text {
+        position: absolute;
+        color: red;
+        font-weight: bold;
+        font-size: 20px;
+        pointer-events: none;
+        animation: floatUp 1s forwards;
+        text-shadow: 1px 1px 0 #000;
+      }
+      .xp-text {
+        position: absolute;
+        color: gold;
+        font-weight: bold;
+        font-size: 20px;
+        pointer-events: none;
+        animation: floatUp 1.5s forwards;
+        text-shadow: 1px 1px 0 #000;
+      }
+      @keyframes floatUp {
+        0% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        100% {
+          opacity: 0;
+          transform: translateY(-50px);
+        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
+    <div id="ui-layer">
+      <!-- Menú Principal -->
+      <div
+        id="lobby"
+        class="flex flex-col items-center justify-center h-full bg-slate-900 interactive"
+      >
+        <h1 class="text-4xl mb-2 font-black text-white italic tracking-tighter">
+          SHADOW HUNTER
+        </h1>
+        <p class="text-yellow-500 mb-8 font-bold text-[10px] tracking-[0.2em]">
+          MOBILE BATTLE RPG
+        </p>
 
-<div id="ui-layer">
-    <!-- Lobby -->
-    <div id="lobby" class="flex flex-col items-center justify-center h-full bg-slate-900 interactive z-50">
-        <h1 class="text-5xl mb-2 font-black text-white italic tracking-tighter text-center">SHADOW<br><span class="text-yellow-500">HUNTER</span></h1>
-        <p class="text-gray-400 mb-8 text-xs tracking-widest">BATTLE ROYALE - SOLO MODE</p>
-        
-        <div class="flex gap-4 mb-8">
-            <button onclick="startGame('WARRIOR')" class="bg-red-900 border-2 border-red-500 p-4 w-32 text-center hover:bg-red-800 transition">
-                <div class="text-white font-bold text-lg">GUERRERO</div>
-                <div class="text-[10px] text-red-300">Daño Melé Alto</div>
-            </button>
-            <button onclick="startGame('SCOUT')" class="bg-green-900 border-2 border-green-500 p-4 w-32 text-center hover:bg-green-800 transition">
-                <div class="text-white font-bold text-lg">TIRADOR</div>
-                <div class="text-[10px] text-green-300">Velocidad Alta</div>
-            </button>
+        <div class="flex flex-col gap-4 w-64">
+          <button
+            onclick="startGame('WARRIOR')"
+            class="bg-black border-2 border-red-700 p-4 text-white hover:bg-red-900 transition-all"
+          >
+            <span class="block font-bold">ESPADACHÍN</span>
+            <span class="text-[10px] text-red-400">DASH & FUERZA</span>
+          </button>
+          <button
+            onclick="startGame('SCOUT')"
+            class="bg-black border-2 border-green-700 p-4 text-white hover:bg-green-900 transition-all"
+          >
+            <span class="block font-bold">TIRADOR</span>
+            <span class="text-[10px] text-green-400">VELOCIDAD & DUALS</span>
+          </button>
         </div>
-        <button onclick="toggleFullScreen()" class="text-yellow-600 text-xs underline mt-4">ACTIVAR PANTALLA COMPLETA</button>
-    </div>
-
-    <!-- HUD -->
-    <div id="hud" class="hidden h-full w-full">
-        <!-- Minimapa -->
-        <div id="minimap-container">
-            <canvas id="minimap-canvas" width="150" height="150"></canvas>
+        <div class="mt-8 text-gray-500 text-[10px] text-center">
+          <p class="mb-2">CONTROLES PC</p>
+          <p>WASD: Mover | ESPACIO: Dash (Lvl 2+)</p>
+          <p>ENTER / CLICK: Atacar</p>
         </div>
+        <button
+          onclick="toggleFullScreen()"
+          class="mt-4 text-yellow-600 text-[10px] underline"
+        >
+          PANTALLA COMPLETA
+        </button>
+      </div>
 
-        <!-- Barras Jugador (Top Center) -->
-        <div class="absolute top-4 left-1/2 -translate-x-1/2 w-64 flex flex-col gap-1">
-            <div class="w-full h-5 bg-gray-900 border-2 border-gray-600 relative">
-                <div id="player-hp-bar" class="h-full bg-gradient-to-r from-red-600 to-red-500 transition-all duration-200" style="width: 100%;"></div>
-                <span id="player-hp-text" class="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white text-shadow">100/100</span>
+      <!-- HUD Móvil -->
+      <div
+        id="hud"
+        class="hidden h-full w-full flex flex-col justify-between p-4"
+      >
+        <!-- Superior: HP y Niveles -->
+        <div class="flex justify-between items-start">
+          <div class="flex flex-col gap-1">
+            <div class="flex items-center gap-2">
+              <div
+                class="w-40 h-4 bg-gray-900 border border-gray-700 overflow-hidden relative"
+              >
+                <div
+                  id="hp-bar"
+                  class="h-full bg-red-600 transition-all duration-200"
+                  style="width: 100%"
+                ></div>
+                <span
+                  id="hp-text"
+                  class="absolute inset-0 text-[10px] text-white flex items-center justify-center font-bold"
+                  >100/100</span
+                >
+              </div>
             </div>
-            <div class="flex justify-between text-yellow-500 font-bold text-xs bg-black/50 px-2 py-1 rounded">
-                <span>LVL <span id="lvl-val">1</span></span>
-                <span>XP <span id="xp-val">0</span></span>
+            <div class="flex items-center gap-2">
+              <div
+                class="w-32 h-2 bg-gray-900 border border-gray-700 overflow-hidden"
+              >
+                <div
+                  id="stamina-bar"
+                  class="h-full bg-green-600"
+                  style="width: 100%"
+                ></div>
+              </div>
             </div>
+            <div class="text-[10px] text-yellow-500 font-bold mt-1">
+              LVL <span id="lvl-val">1</span> | ALMAS:
+              <span id="xp-val">0</span>
+            </div>
+          </div>
+
+          <button
+            onclick="toggleStats()"
+            class="interactive bg-black/50 border border-yellow-600 p-2 text-yellow-500 text-[10px] font-bold hover:bg-black"
+          >
+            ATRIBUTOS
+          </button>
         </div>
 
-        <!-- Controles -->
+        <!-- Centro: Panel de Atributos (Modal Móvil) -->
+        <div
+          id="attr-panel"
+          class="hidden self-center bg-black/90 border-2 border-yellow-600 p-6 text-white interactive w-72"
+        >
+          <div class="flex justify-between mb-4">
+            <h3 class="font-bold text-sm uppercase">Mejorar Personaje</h3>
+            <button onclick="toggleStats()" class="text-red-500 font-bold">
+              X
+            </button>
+          </div>
+          <div class="flex flex-col gap-4">
+            <div class="flex justify-between items-center">
+              <span>VIGOR (HP)</span>
+              <div class="flex items-center gap-4">
+                <span id="stat-vig">10</span>
+                <button onclick="upgradeStat('vig')" class="stat-btn">+</button>
+              </div>
+            </div>
+            <div class="flex justify-between items-center">
+              <span>FUERZA (DMG)</span>
+              <div class="flex items-center gap-4">
+                <span id="stat-str">10</span>
+                <button onclick="upgradeStat('str')" class="stat-btn">+</button>
+              </div>
+            </div>
+            <div class="flex justify-between items-center">
+              <span>DESTREZA (SPD)</span>
+              <div class="flex items-center gap-4">
+                <span id="stat-dex">10</span>
+                <button onclick="upgradeStat('dex')" class="stat-btn">+</button>
+              </div>
+            </div>
+            <p class="text-[10px] text-yellow-600 text-center mt-2">
+              COSTO: 100 ALMAS
+            </p>
+          </div>
+        </div>
+
+        <!-- Inferior: Controles Táctiles (Posicionamiento Absoluto) -->
+
+        <!-- Joystick Izquierda -->
         <div id="joystick-container" class="interactive">
-            <div id="joystick-knob"></div>
+          <div id="joystick-knob"></div>
         </div>
 
+        <!-- Botones Derecha -->
         <div id="actions-container" class="interactive">
-            <button id="btn-attack" class="skill-btn" onpointerdown="playerAttack()">ATK</button>
-            <button id="btn-dash" class="skill-btn" onpointerdown="useSkill('dash')">DASH</button>
-            <button id="btn-skill2" class="skill-btn" onpointerdown="useSkill('spin')">GIRAR</button>
-            <button id="btn-skill3" class="skill-btn" onpointerdown="useSkill('heal')">CURAR</button>
+          <div class="relative">
+            <button
+              id="skill-btn"
+              onpointerdown="triggerSkill()"
+              class="action-btn skill-btn-style btn-disabled"
+            >
+              DASH
+            </button>
+            <span
+              id="lock-icon"
+              class="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] px-1 rounded-full"
+              >🔒 Lvl 2</span
+            >
+          </div>
+          <button
+            id="attack-btn"
+            onpointerdown="triggerAttack()"
+            class="action-btn"
+            style="border-color: #ff4400; color: #ff4400"
+          >
+            ATK
+          </button>
         </div>
+
+        <!-- Modal de Quest -->
+        <div
+          id="quest-notifier"
+          class="hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 quest-card p-6 interactive w-[85%] max-w-sm text-white z-50"
+        >
+          <p
+            id="quest-title"
+            class="text-yellow-500 font-bold text-lg mb-2 italic"
+          ></p>
+          <p id="quest-desc" class="text-xs text-gray-400 mb-6"></p>
+          <div class="flex gap-2">
+            <button
+              onclick="acceptQuest()"
+              class="flex-1 bg-yellow-600 text-black font-bold py-3 text-sm hover:bg-yellow-500"
+            >
+              ACEPTAR PODER
+            </button>
+            <button
+              onclick="closeQuest()"
+              class="px-4 bg-gray-800 text-white font-bold py-3 text-sm hover:bg-gray-700"
+            >
+              IGNORAR
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
-</div>
 
-<script>
-    // --- CONFIGURACIÓN GLOBAL ---
-    const CONFIG = {
-        worldSize: 100,
-        enemyCount: 15, // Más enemigos para más caos
-        respawnTime: 4000
-    };
+    <script>
+      let scene, camera, renderer, player, clock;
+      let enemies = [];
+      let worldSize = 120;
+      let isGameRunning = false;
+      let currentCamp = null;
+      let keys = {};
 
-    let scene, camera, renderer, clock;
-    let player, enemies = [], obstacles = [];
-    let isGameRunning = false;
-    
-    // Joystick State
-    let joystick = { active: false, x: 0, y: 0, startX: 0, startY: 0 };
-    
-    // Player Stats
-    let stats = {
-        hp: 100, maxHp: 100,
-        xp: 0, lvl: 1,
-        speed: 0.15,
-        dmg: 15,
-        role: 'WARRIOR',
-        cooldowns: { dash: 0, spin: 0, heal: 0 }
-    };
+      // Estado del Jugador
+      let playerStats = {
+        lvl: 1,
+        xp: 0,
+        vig: 10,
+        str: 10,
+        dex: 10,
+        hp: 100,
+        maxHp: 100,
+        stamina: 100,
+        maxStamina: 100,
+        role: "WARRIOR",
+      };
 
-    // --- INICIALIZACIÓN ---
-    function init() {
+      // Control de Joystick
+      let joystick = { active: false, x: 0, y: 0, startX: 0, startY: 0 };
+      const ROLES = {
+        WARRIOR: {
+          color: 0x990000,
+          speed: 0.12,
+          skillName: "DASH",
+          baseDmg: 15,
+        },
+        SCOUT: {
+          color: 0x009900,
+          speed: 0.16,
+          skillName: "SPRINT",
+          baseDmg: 10,
+        },
+      };
+
+      function toggleFullScreen() {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch((e) => {});
+        } else {
+          document.exitFullscreen();
+        }
+      }
+
+      function initScene() {
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x1a1a1a);
-        
-        camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-        
+        scene.background = new THREE.Color(0x0a0a0a);
+        scene.fog = new THREE.FogExp2(0x0a0a0a, 0.04);
+        camera = new THREE.PerspectiveCamera(
+          60,
+          window.innerWidth / window.innerHeight,
+          0.1,
+          1000
+        );
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true;
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         document.body.appendChild(renderer.domElement);
 
-        // Iluminación
-        const ambLight = new THREE.AmbientLight(0xffffff, 0.4);
-        scene.add(ambLight);
-        
-        const dirLight = new THREE.DirectionalLight(0xffaa00, 0.8);
-        dirLight.position.set(50, 100, 50);
-        dirLight.castShadow = true;
-        dirLight.shadow.mapSize.width = 2048; 
-        dirLight.shadow.mapSize.height = 2048;
-        scene.add(dirLight);
+        // Luces
+        const amb = new THREE.AmbientLight(0xffffff, 0.2);
+        scene.add(amb);
+        const dir = new THREE.DirectionalLight(0xffaa00, 0.8);
+        dir.position.set(50, 100, 20);
+        dir.castShadow = true;
+        scene.add(dir);
 
-        clock = new THREE.Clock();
-        
-        createMap();
-        setupInputs();
-        animate();
-    }
+        createWorld();
+        setupInput();
+      }
 
-    function createMap() {
-        // Suelo
-        const floorGeo = new THREE.PlaneGeometry(CONFIG.worldSize, CONFIG.worldSize);
-        const floorMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+      function createWorld() {
+        const floorGeo = new THREE.PlaneGeometry(worldSize, worldSize);
+        const floorMat = new THREE.MeshStandardMaterial({
+          color: 0x111111,
+          roughness: 0.8,
+        });
         const floor = new THREE.Mesh(floorGeo, floorMat);
         floor.rotation.x = -Math.PI / 2;
-        floor.receiveShadow = true;
         scene.add(floor);
 
-        // Muros Límite (Visuales)
-        const wallMat = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.1, side: THREE.DoubleSide });
-        const wallGeo = new THREE.CylinderGeometry(CONFIG.worldSize/2, CONFIG.worldSize/2, 10, 32, 1, true);
-        const wall = new THREE.Mesh(wallGeo, wallMat);
-        wall.position.y = 5;
-        scene.add(wall);
+        // Grid decorativo
+        const grid = new THREE.GridHelper(worldSize, 20, 0x333333, 0x222222);
+        grid.position.y = 0.01;
+        scene.add(grid);
 
         // Obstáculos
-        for(let i=0; i<30; i++) {
-            const w = 2 + Math.random()*3;
-            const h = 3 + Math.random()*5;
-            const d = 2 + Math.random()*3;
-            const geo = new THREE.BoxGeometry(w, h, d);
-            const mat = new THREE.MeshStandardMaterial({ color: 0x444444 });
-            const mesh = new THREE.Mesh(geo, mat);
-            
-            const x = (Math.random()-0.5) * (CONFIG.worldSize - 10);
-            const z = (Math.random()-0.5) * (CONFIG.worldSize - 10);
-            
-            mesh.position.set(x, h/2, z);
-            mesh.castShadow = true;
-            mesh.receiveShadow = true;
-            
-            // Hitbox Data
-            mesh.userData = { isObstacle: true, radius: Math.max(w,d)/1.8 };
-            obstacles.push(mesh);
-            scene.add(mesh);
+        for (let i = 0; i < 40; i++) {
+          const h = 4 + Math.random() * 6;
+          const w = 2 + Math.random() * 2;
+          const m = new THREE.Mesh(
+            new THREE.BoxGeometry(w, h, w),
+            new THREE.MeshStandardMaterial({ color: 0x222222 })
+          );
+          m.position.set(
+            (Math.random() - 0.5) * worldSize,
+            h / 2,
+            (Math.random() - 0.5) * worldSize
+          );
+          m.userData = { isObstacle: true, radius: w / 1.5 }; // Para colisiones
+          scene.add(m);
         }
-    }
 
-    // --- ENTIDADES ---
-    function createUnit(isPlayer, role, pos) {
+        for (let i = 0; i < 8; i++)
+          spawnCamp(
+            (Math.random() - 0.5) * 100,
+            (Math.random() - 0.5) * 100,
+            i
+          );
+      }
+
+      function spawnCamp(x, z, id) {
         const group = new THREE.Group();
-        const color = isPlayer ? (role === 'WARRIOR' ? 0xff3333 : 0x33ff33) : 0xaaaaaa; // Enemigos grises al inicio
-        
-        // Modelo simple
-        const bodyGeo = new THREE.CylinderGeometry(0.5, 0.5, 1.5, 8);
-        const bodyMat = new THREE.MeshStandardMaterial({ color: color });
-        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        const fire = new THREE.Mesh(
+          new THREE.CylinderGeometry(1.5, 2, 0.5, 8),
+          new THREE.MeshBasicMaterial({ color: 0x442200 })
+        );
+        const light = new THREE.PointLight(0xff4400, 2, 10);
+        light.position.y = 1;
+        group.add(fire);
+        group.add(light);
+
+        // Partícula de fuego simple
+        const flame = new THREE.Mesh(
+          new THREE.SphereGeometry(0.5, 4, 4),
+          new THREE.MeshBasicMaterial({ color: 0xffaa00 })
+        );
+        flame.position.y = 0.5;
+        group.add(flame);
+
+        group.position.set(x, 0.25, z);
+        group.userData = { isCamp: true, id: id, used: false };
+        scene.add(group);
+      }
+
+      function createCharacter(role, isEnemy = false) {
+        const group = new THREE.Group();
+        const col = isEnemy
+          ? Math.random() > 0.5
+            ? ROLES.WARRIOR.color
+            : ROLES.SCOUT.color
+          : ROLES[role].color;
+
+        const body = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.5, 0.5, 1.5, 8),
+          new THREE.MeshStandardMaterial({ color: col })
+        );
         body.position.y = 0.75;
-        body.castShadow = true;
         group.add(body);
 
-        const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), new THREE.MeshStandardMaterial({ color: 0xffffff }));
-        head.position.set(0, 1.6, 0.3); // Ojos al frente
+        const head = new THREE.Mesh(
+          new THREE.SphereGeometry(0.35, 8, 8),
+          new THREE.MeshStandardMaterial({ color: 0xffffff })
+        );
+        head.position.set(0, 1.6, 0.2);
         group.add(head);
 
-        // Barra de Vida 2D (Sprite/Plane que siempre mira a camara)
-        if (!isPlayer) {
-            const barBg = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 0.2), new THREE.MeshBasicMaterial({ color: 0x000000 }));
-            barBg.position.y = 2.5;
-            group.add(barBg);
-            
-            const barFg = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.15), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
-            barFg.position.y = 2.5;
-            barFg.position.z = 0.01;
-            group.userData.hpMesh = barFg; // Referencia para escalar
-            group.add(barFg);
-            
-            // Randomizar stats enemigos
-            const lvl = Math.floor(Math.random() * 3) + 1;
-            group.userData = {
-                id: Math.random(),
-                isEnemy: true,
-                hp: 50 * lvl,
-                maxHp: 50 * lvl,
-                dmg: 5 * lvl,
-                lvl: lvl,
-                speed: 0.08 + (Math.random()*0.04),
-                lastAttack: 0,
-                target: null // A quién quiere matar
-            };
-            
-            // Color por nivel
-            if(lvl > 2) bodyMat.color.setHex(0x5500aa); // Élite
+        // Barra de vida para enemigos
+        if (isEnemy) {
+          const hpBg = new THREE.Mesh(
+            new THREE.PlaneGeometry(1, 0.1),
+            new THREE.MeshBasicMaterial({ color: 0x000000 })
+          );
+          hpBg.position.set(0, 2.2, 0);
+          group.add(hpBg);
+          const hpFg = new THREE.Mesh(
+            new THREE.PlaneGeometry(1, 0.1),
+            new THREE.MeshBasicMaterial({ color: 0xff0000 })
+          );
+          hpFg.position.set(0, 2.2, 0.01);
+          group.userData.hpBar = hpFg;
+          group.add(hpFg);
         }
 
-        group.position.copy(pos);
+        group.position.set(
+          (Math.random() - 0.5) * 80,
+          0,
+          (Math.random() - 0.5) * 80
+        );
+
+        if (isEnemy) {
+          // Stats del enemigo (simulando jugadores)
+          const lvl = 1 + Math.floor(Math.random() * 3);
+          group.userData = {
+            isEnemy: true,
+            hp: 80 + lvl * 20,
+            maxHp: 80 + lvl * 20,
+            xpReward: 50 * lvl,
+            targetPos: new THREE.Vector3(
+              (Math.random() - 0.5) * 100,
+              0,
+              (Math.random() - 0.5) * 100
+            ),
+          };
+        }
+
         scene.add(group);
         return group;
-    }
+      }
 
-    // --- GAMEPLAY LOOP ---
-    function startGame(role) {
-        document.getElementById('lobby').classList.add('hidden');
-        document.getElementById('hud').classList.remove('hidden');
-        
-        stats.role = role;
-        if(role === 'SCOUT') { stats.speed = 0.2; stats.dmg = 10; stats.hp = 80; stats.maxHp = 80; }
-        
-        player = createUnit(true, role, new THREE.Vector3(0, 0, 0));
-        
-        // Spawneamos enemigos
-        for(let i=0; i<CONFIG.enemyCount; i++) respawnEnemy();
-        
+      function setupInput() {
+        // Joystick
+        const container = document.getElementById("joystick-container");
+        const knob = document.getElementById("joystick-knob");
+
+        const handleStart = (e) => {
+          joystick.active = true;
+          const touch = e.touches ? e.touches[0] : e;
+          const rect = container.getBoundingClientRect();
+          joystick.startX = rect.left + rect.width / 2;
+          joystick.startY = rect.top + rect.height / 2;
+        };
+
+        const handleMove = (e) => {
+          if (!joystick.active) return;
+          const touch = e.touches ? e.touches[0] : e;
+          const dx = touch.clientX - joystick.startX;
+          const dy = touch.clientY - joystick.startY;
+          const dist = Math.min(Math.sqrt(dx * dx + dy * dy), 50);
+          const angle = Math.atan2(dy, dx);
+
+          joystick.x = (Math.cos(angle) * dist) / 50;
+          joystick.y = (Math.sin(angle) * dist) / 50;
+
+          knob.style.transform = `translate(${joystick.x * 50}px, ${
+            joystick.y * 50
+          }px)`;
+        };
+
+        const handleEnd = () => {
+          joystick.active = false;
+          joystick.x = 0;
+          joystick.y = 0;
+          knob.style.transform = "translate(0,0)";
+        };
+
+        container.addEventListener("touchstart", handleStart);
+        window.addEventListener("touchmove", handleMove);
+        window.addEventListener("touchend", handleEnd);
+
+        // Teclado (PC)
+        window.addEventListener("keydown", (e) => {
+          keys[e.code] = true;
+          if (e.code === "Space") triggerSkill();
+          if (e.code === "Enter") triggerAttack();
+        });
+        window.addEventListener("keyup", (e) => (keys[e.code] = false));
+
+        // Mouse Click Attack
+        window.addEventListener("mousedown", (e) => {
+          // Solo si no estamos tocando UI
+          if (e.target.tagName !== "BUTTON") triggerAttack();
+        });
+      }
+
+      function startGame(role) {
+        document.getElementById("lobby").classList.add("hidden");
+        document.getElementById("hud").classList.remove("hidden");
+        document.getElementById("skill-btn").innerText = ROLES[role].skillName;
+
+        player = createCharacter(role);
+        player.userData.radius = 0.5; // Hitbox del jugador
+        playerStats.role = role;
+
         isGameRunning = true;
-    }
 
-    function respawnEnemy() {
-        const x = (Math.random()-0.5) * (CONFIG.worldSize - 5);
-        const z = (Math.random()-0.5) * (CONFIG.worldSize - 5);
-        const en = createUnit(false, 'WARRIOR', new THREE.Vector3(x, 0, z));
-        enemies.push(en);
-    }
+        for (let i = 0; i < 9; i++) {
+          enemies.push(createCharacter("WARRIOR", true));
+        }
+        updateHUD();
+        animate();
+      }
 
-    function handleEnemyAI() {
-        const allUnits = [player, ...enemies]; // Todos son objetivos potenciales
-        
-        enemies.forEach(en => {
-            if(en.userData.hp <= 0) return;
+      // Acciones
+      function triggerSkill() {
+        if (!isGameRunning) return;
 
-            // 1. Buscar objetivo más cercano
-            let closest = null;
-            let minDist = 999;
+        // Restricción de Nivel
+        if (playerStats.lvl < 2) {
+          showFloatingText("¡Necesitas Nivel 2!", player.position, "red");
+          return;
+        }
 
-            allUnits.forEach(target => {
-                if(target === en) return; // No atacarse a sí mismo
-                if(target === player && stats.hp <= 0) return; // Ignorar jugador muerto
-                if(target.userData.isEnemy && target.userData.hp <= 0) return; // Ignorar enemigos muertos
+        if (playerStats.stamina >= 40) {
+          playerStats.stamina -= 40;
+          // Visual Dash
+          const dashMesh = player.children[0].clone();
+          dashMesh.material = dashMesh.material.clone();
+          dashMesh.material.transparent = true;
+          dashMesh.material.opacity = 0.5;
+          dashMesh.position.copy(player.position);
+          scene.add(dashMesh);
+          setTimeout(() => scene.remove(dashMesh), 200);
 
-                const d = en.position.distanceTo(target.position);
-                if(d < 20 && d < minDist) { // Radio de visión
-                    minDist = d;
-                    closest = target;
-                }
-            });
+          // Boost
+          const dir = new THREE.Vector3(0, 0, 1).applyQuaternion(
+            player.quaternion
+          );
+          player.position.addScaledVector(dir, 5); // Teleport corto
+        }
+      }
 
-            // 2. Moverse o Atacar
-            if(closest) {
-                // Orientación de la barra de vida (Billboard)
-                en.userData.hpMesh.parent.lookAt(camera.position); 
-                
-                const dist = en.position.distanceTo(closest.position);
-                
-                if(dist > 1.2) {
-                    // Perseguir
-                    const dir = new THREE.Vector3().subVectors(closest.position, en.position).normalize();
-                    const newPos = en.position.clone().addScaledVector(dir, en.userData.speed);
-                    
-                    if(!checkCollisions(newPos, en)) {
-                        en.position.copy(newPos);
-                        en.lookAt(closest.position);
-                    }
-                } else {
-                    // Atacar
-                    const now = Date.now();
-                    if(now - en.userData.lastAttack > 1500) { // Cooldown ataque
-                        en.userData.lastAttack = now;
-                        // Animación visual de golpe
-                        performAttackVisual(en);
-                        
-                        // Aplicar daño
-                        if(closest === player) {
-                            takeDamage(en.userData.dmg);
-                        } else {
-                            damageEnemy(closest, en.userData.dmg, false);
-                        }
-                    }
-                }
-            } else {
-                // Patrullar si no hay nadie
-                // (Implementación simple: quedarse quieto o moverse random)
+      function triggerAttack() {
+        if (!isGameRunning) return;
+
+        // Animación visual del botón
+        const btn = document.getElementById("attack-btn");
+        btn.classList.add("btn-active");
+        setTimeout(() => btn.classList.remove("btn-active"), 100);
+
+        if (playerStats.stamina < 10) return;
+        playerStats.stamina -= 10;
+
+        // Visual Attack (Onda)
+        const wave = new THREE.Mesh(
+          new THREE.RingGeometry(0.5, 2.5, 3),
+          new THREE.MeshBasicMaterial({
+            color: 0xffaa00,
+            transparent: true,
+            opacity: 0.8,
+            side: THREE.DoubleSide,
+          })
+        );
+        wave.rotation.x = -Math.PI / 2;
+        wave.position.copy(player.position);
+        wave.position.y = 0.5;
+        // Ajustar rotación para coincidir con el jugador
+        wave.quaternion.copy(player.quaternion);
+        wave.rotateX(-Math.PI / 2); // Corregir orientación del plano
+
+        scene.add(wave);
+        setTimeout(() => scene.remove(wave), 150);
+
+        // Lógica de Hitbox (Cono frontal)
+        const attackRange = 3;
+        const attackAngle = Math.PI / 2; // 90 grados
+        const playerDir = new THREE.Vector3(0, 0, 1)
+          .applyQuaternion(player.quaternion)
+          .normalize();
+
+        enemies.forEach((enemy, index) => {
+          const dist = player.position.distanceTo(enemy.position);
+          if (dist < attackRange) {
+            const enemyDir = new THREE.Vector3()
+              .subVectors(enemy.position, player.position)
+              .normalize();
+            const angle = playerDir.angleTo(enemyDir);
+
+            if (angle < attackAngle) {
+              // HIT!
+              const dmg = playerStats.str + ROLES[playerStats.role].baseDmg;
+              enemy.userData.hp -= dmg;
+              showFloatingText(`-${dmg}`, enemy.position, "red");
+
+              // Pushback ligero
+              const push = enemyDir.multiplyScalar(1);
+              enemy.position.add(push);
+
+              // Actualizar barra vida enemigo
+              const hpPercent = Math.max(
+                0,
+                enemy.userData.hp / enemy.userData.maxHp
+              );
+              enemy.userData.hpBar.scale.x = hpPercent;
+
+              if (enemy.userData.hp <= 0) {
+                killEnemy(enemy, index);
+              }
             }
+          }
         });
-    }
+      }
 
-    function checkCollisions(pos, self) {
-        // Límites del mapa (Circular)
-        if(pos.length() > CONFIG.worldSize/2 - 1) return true;
+      function killEnemy(enemy, index) {
+        // Robar XP
+        const xpGain = enemy.userData.xpReward;
+        playerStats.xp += xpGain;
+        showFloatingText(`+${xpGain} ALMAS`, player.position, "gold");
 
-        // Obstáculos
-        for(let obs of obstacles) {
-            const dx = pos.x - obs.position.x;
-            const dz = pos.z - obs.position.z;
-            const dist = Math.sqrt(dx*dx + dz*dz);
-            if(dist < (0.5 + obs.userData.radius)) return true;
-        }
+        // Eliminar visualmente
+        scene.remove(enemy);
+        enemies.splice(index, 1);
 
-        // Otras unidades (Evitar superposición)
-        for(let other of enemies) {
-            if(other === self || other.userData.hp <= 0) continue;
-            if(pos.distanceTo(other.position) < 1.0) return true;
-        }
-        
-        if(self !== player && pos.distanceTo(player.position) < 1.0) return true;
+        updateHUD();
 
-        return false;
-    }
-
-    // --- SISTEMA DE COMBATE ---
-    
-    function playerAttack() {
-        if(!isGameRunning) return;
-        performAttackVisual(player);
-
-        // Detectar enemigos en cono frontal
-        const range = 3;
-        const angleLimit = Math.PI / 3; // 60 grados
-        const pDir = new THREE.Vector3(0,0,1).applyQuaternion(player.quaternion);
-
-        enemies.forEach(en => {
-            const dist = player.position.distanceTo(en.position);
-            if(dist < range) {
-                const enDir = new THREE.Vector3().subVectors(en.position, player.position).normalize();
-                const angle = pDir.angleTo(enDir);
-                if(angle < angleLimit) {
-                    damageEnemy(en, stats.dmg, true);
-                }
-            }
-        });
-    }
-
-    function useSkill(type) {
-        const now = Date.now();
-        if(now < stats.cooldowns[type]) return; // Cooldown check
-
-        if(type === 'dash') {
-            if(stats.lvl < 2) return showFloatingText("¡Necesitas Nivel 2!", player.position, 'white');
-            
-            // Impulso vectorial (no depende del joystick actual)
-            const dashDir = new THREE.Vector3(0,0,1).applyQuaternion(player.quaternion);
-            const targetPos = player.position.clone().addScaledVector(dashDir, 5);
-            
-            if(!checkCollisions(targetPos, player)) {
-                player.position.copy(targetPos); // Teleport corto (Dash instantáneo)
-            }
-            stats.cooldowns.dash = now + 2000; // 2s CD
-        } 
-        else if (type === 'spin') {
-            // Ataque área
-             enemies.forEach(en => {
-                if(player.position.distanceTo(en.position) < 4) damageEnemy(en, stats.dmg * 1.5, true);
-            });
-            createEffect('spin', player.position);
-        }
-        else if (type === 'heal') {
-            stats.hp = Math.min(stats.hp + 30, stats.maxHp);
-            updateHUD();
-            createEffect('heal', player.position);
-        }
-    }
-
-    function damageEnemy(en, amount, fromPlayer) {
-        en.userData.hp -= amount;
-        
-        // Actualizar barra visual
-        const pct = Math.max(0, en.userData.hp / en.userData.maxHp);
-        en.userData.hpMesh.scale.x = pct;
-        
-        // Texto flotante
-        if(fromPlayer) showFloatingText(`-${Math.floor(amount)}`, en.position, 'red');
-
-        if(en.userData.hp <= 0) {
-            killEnemy(en, fromPlayer);
-        }
-    }
-
-    function killEnemy(en, killedByPlayer) {
-        en.position.y = -100; // Ocultar bajo tierra
-        
-        if(killedByPlayer) {
-            const xp = en.userData.lvl * 20;
-            stats.xp += xp;
-            showFloatingText(`+${xp} XP`, player.position, 'gold');
-            checkLevelUp();
-        }
-
-        // Respawn tras tiempo
+        // Respawn (Simulación Multijugador)
         setTimeout(() => {
-            scene.remove(en); // Limpiar memoria de ThreeJS idealmente
-            const idx = enemies.indexOf(en);
-            if(idx > -1) enemies.splice(idx, 1);
-            respawnEnemy();
-        }, CONFIG.respawnTime);
-    }
+          enemies.push(createCharacter("WARRIOR", true));
+        }, 3000);
+      }
 
-    function takeDamage(amount) {
-        stats.hp -= amount;
-        showFloatingText(`-${Math.floor(amount)}`, player.position, 'red');
-        updateHUD();
-        if(stats.hp <= 0) {
-            alert("¡HAS MUERTO! Refrescando...");
-            location.reload();
-        }
-    }
+      function showFloatingText(text, pos, color) {
+        const div = document.createElement("div");
+        div.innerText = text;
+        div.className = color === "gold" ? "xp-text" : "damage-text";
+        div.style.color = color;
 
-    function checkLevelUp() {
-        if(stats.xp >= stats.lvl * 100) {
-            stats.xp -= stats.lvl * 100;
-            stats.lvl++;
-            stats.maxHp += 20;
-            stats.hp = stats.maxHp;
-            stats.dmg += 5;
-            showFloatingText("¡LEVEL UP!", player.position, 'yellow');
-            updateHUD();
-        }
-        updateHUD();
-    }
-
-    // --- VISUALES & UI ---
-    function performAttackVisual(unit) {
-        // Simple movimiento hacia adelante y atrás
-        const initial = unit.children[0].position.z; // Asumiendo cilindro
-        unit.children[0].position.z += 0.5;
-        setTimeout(() => unit.children[0].position.z = initial, 100);
-    }
-
-    function createEffect(type, pos) {
-        const color = type === 'heal' ? 0x00ff00 : 0xffff00;
-        const geo = new THREE.RingGeometry(0.5, 3, 32);
-        const mat = new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.8, side: THREE.DoubleSide });
-        const mesh = new THREE.Mesh(geo, mat);
-        mesh.rotation.x = -Math.PI/2;
-        mesh.position.copy(pos);
-        mesh.position.y = 0.5;
-        scene.add(mesh);
-        
-        // Animación simple escala
-        let s = 1;
-        const interval = setInterval(() => {
-            s += 0.1;
-            mesh.scale.set(s,s,s);
-            mesh.material.opacity -= 0.1;
-            if(mesh.material.opacity <= 0) {
-                clearInterval(interval);
-                scene.remove(mesh);
-            }
-        }, 50);
-    }
-
-    function showFloatingText(text, pos, className) {
-        const el = document.createElement('div');
-        el.className = className === 'gold' ? 'xp-text' : 'damage-text';
-        if(className === 'white') el.style.color = 'white';
-        el.innerText = text;
-        document.body.appendChild(el);
-
-        // Proyectar coordenadas
+        // Proyectar posición 3D a 2D
         const vec = pos.clone();
         vec.y += 2;
         vec.project(camera);
-        
-        const x = (vec.x * .5 + .5) * window.innerWidth;
-        const y = (-(vec.y * .5) + .5) * window.innerHeight;
-        
-        el.style.left = x + 'px';
-        el.style.top = y + 'px';
-        
-        setTimeout(() => el.remove(), 1500);
-    }
+        const x = (vec.x * 0.5 + 0.5) * window.innerWidth;
+        const y = (-(vec.y * 0.5) + 0.5) * window.innerHeight;
 
-    function updateMinimap() {
-        const c = document.getElementById('minimap-canvas');
-        const ctx = c.getContext('2d');
-        ctx.clearRect(0,0,150,150);
+        div.style.left = `${x}px`;
+        div.style.top = `${y}px`;
+        document.body.appendChild(div);
+        setTimeout(() => div.remove(), 1500);
+      }
 
-        // Centro (Jugador)
-        const centerX = 75;
-        const centerY = 75;
-        const scale = 1.5; // Zoom del mapa
+      function toggleStats() {
+        const panel = document.getElementById("attr-panel");
+        panel.classList.toggle("hidden");
+      }
 
-        // Dibujar Jugador
-        ctx.fillStyle = '#00ff00';
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, 3, 0, Math.PI*2);
-        ctx.fill();
-
-        // Dibujar Enemigos
-        ctx.fillStyle = '#ff0000';
-        enemies.forEach(en => {
-            if(en.userData.hp <= 0) return;
-            
-            // Posición relativa al jugador
-            const dx = (en.position.x - player.position.x) * scale;
-            const dz = (en.position.z - player.position.z) * scale;
-            
-            // Dibujar solo si está dentro del radar
-            if(Math.abs(dx) < 75 && Math.abs(dz) < 75) {
-                ctx.beginPath();
-                ctx.arc(centerX + dx, centerY + dz, 2, 0, Math.PI*2);
-                ctx.fill();
-            }
-        });
-    }
-
-    function updateHUD() {
-        const pct = (stats.hp / stats.maxHp) * 100;
-        document.getElementById('player-hp-bar').style.width = pct + '%';
-        document.getElementById('player-hp-text').innerText = `${Math.floor(stats.hp)}/${stats.maxHp}`;
-        document.getElementById('lvl-val').innerText = stats.lvl;
-        document.getElementById('xp-val').innerText = Math.floor(stats.xp);
-        
-        // Habilitar botones
-        document.getElementById('btn-dash').disabled = stats.lvl < 2;
-    }
-
-    // --- INPUTS ---
-    function setupInputs() {
-        const stick = document.getElementById('joystick-container');
-        const knob = document.getElementById('joystick-knob');
-        
-        stick.addEventListener('touchstart', e => {
-            e.preventDefault(); // Evitar scroll
-            const touch = e.touches[0];
-            const rect = stick.getBoundingClientRect();
-            joystick.active = true;
-            joystick.startX = rect.left + rect.width/2;
-            joystick.startY = rect.top + rect.height/2;
-            updateJoystick(touch.clientX, touch.clientY);
-        }, {passive: false});
-
-        stick.addEventListener('touchmove', e => {
-            e.preventDefault();
-            if(joystick.active) updateJoystick(e.touches[0].clientX, e.touches[0].clientY);
-        }, {passive: false});
-
-        const endStick = () => {
-            joystick.active = false;
-            joystick.x = 0;
-            joystick.y = 0;
-            knob.style.transform = `translate(0px, 0px)`;
-        };
-        stick.addEventListener('touchend', endStick);
-        stick.addEventListener('touchcancel', endStick);
-
-        function updateJoystick(clientX, clientY) {
-            const maxDist = 40;
-            let dx = clientX - joystick.startX;
-            let dy = clientY - joystick.startY;
-            const dist = Math.min(Math.sqrt(dx*dx + dy*dy), maxDist);
-            const angle = Math.atan2(dy, dx);
-            
-            joystick.x = (Math.cos(angle) * dist) / maxDist;
-            joystick.y = (Math.sin(angle) * dist) / maxDist;
-            
-            knob.style.transform = `translate(${joystick.x * maxDist}px, ${joystick.y * maxDist}px)`;
+      function upgradeStat(stat) {
+        if (playerStats.xp >= 100) {
+          playerStats.xp -= 100;
+          playerStats[stat]++;
+          if (stat === "vig") {
+            playerStats.maxHp += 20;
+            playerStats.hp = playerStats.maxHp;
+          }
+          updateHUD();
         }
+      }
 
-        // Teclado (Debug PC)
-        window.addEventListener('keydown', e => {
-            if(e.key === ' ') useSkill('dash');
-            if(e.key === 'Enter') playerAttack();
-        });
-    }
+      function acceptQuest() {
+        if (!currentCamp) return;
+        currentCamp.userData.used = true;
+        currentCamp.children[1].intensity = 0; // Apagar luz
 
-    function toggleFullScreen() {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(err => {
-                console.log(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
-            });
+        playerStats.xp += 150;
+        playerStats.lvl++;
+
+        const isWarrior = playerStats.role === "WARRIOR";
+        if (isWarrior) playerStats.str += 5;
+        else playerStats.dex += 5;
+
+        showFloatingText("¡PODER AUMENTADO!", player.position, "yellow");
+
+        closeQuest();
+        updateHUD();
+
+        // Bloquear otro campamento
+        const others = scene.children.filter(
+          (c) => c.userData.isCamp && !c.userData.used
+        );
+        if (others.length > 0) {
+          const blocked = others[Math.floor(Math.random() * others.length)];
+          blocked.userData.used = true;
+          blocked.children[0].material.color.setHex(0x333333); // Gris visual
         }
-    }
+      }
 
-    // --- LOOP PRINCIPAL ---
-    function animate() {
+      function closeQuest() {
+        document.getElementById("quest-notifier").classList.add("hidden");
+        currentCamp = null;
+      }
+
+      function updateHUD() {
+        const hpPct = (playerStats.hp / playerStats.maxHp) * 100;
+        document.getElementById("hp-bar").style.width = `${hpPct}%`;
+        document.getElementById("hp-text").innerText = `${Math.floor(
+          playerStats.hp
+        )}/${playerStats.maxHp}`;
+        document.getElementById("stamina-bar").style.width = `${
+          (playerStats.stamina / playerStats.maxStamina) * 100
+        }%`;
+        document.getElementById("xp-val").innerText = playerStats.xp;
+        document.getElementById("lvl-val").innerText = playerStats.lvl;
+
+        document.getElementById("stat-vig").innerText = playerStats.vig;
+        document.getElementById("stat-str").innerText = playerStats.str;
+        document.getElementById("stat-dex").innerText = playerStats.dex;
+
+        // Skill Unlock Visual
+        const skillBtn = document.getElementById("skill-btn");
+        const lockIcon = document.getElementById("lock-icon");
+        if (playerStats.lvl >= 2) {
+          skillBtn.classList.remove("btn-disabled");
+          if (lockIcon) lockIcon.style.display = "none";
+        }
+      }
+
+      function checkCollisions(newPos) {
+        // Colisión con Obstáculos
+        for (let obj of scene.children) {
+          if (obj.userData.isObstacle) {
+            const dist = newPos.distanceTo(
+              new THREE.Vector3(obj.position.x, 0, obj.position.z)
+            );
+            // Radio jugador (0.5) + Radio objeto
+            if (dist < 0.5 + obj.userData.radius) return true;
+          }
+        }
+        // Colisión con Enemigos (Cuerpo a cuerpo)
+        for (let en of enemies) {
+          const dist = newPos.distanceTo(en.position);
+          if (dist < 1.0) return true; // Bloqueo físico
+        }
+        return false;
+      }
+
+      function animate() {
+        if (!isGameRunning) return;
         requestAnimationFrame(animate);
-        if(!isGameRunning) return;
+
+        let moveX = joystick.x;
+        let moveY = joystick.y;
+
+        // Input PC Override
+        if (keys["KeyW"] || keys["ArrowUp"]) moveY = -1;
+        if (keys["KeyS"] || keys["ArrowDown"]) moveY = 1;
+        if (keys["KeyA"] || keys["ArrowLeft"]) moveX = -1;
+        if (keys["KeyD"] || keys["ArrowRight"]) moveX = 1;
 
         // Movimiento Jugador
-        if(joystick.active) {
-            const moveSpeed = stats.speed;
-            const moveVec = new THREE.Vector3(joystick.x, 0, joystick.y).normalize().multiplyScalar(moveSpeed);
-            const newPos = player.position.clone().add(moveVec);
-            
-            if(!checkCollisions(newPos, player)) {
-                player.position.add(moveVec);
-                // Rotar hacia donde camina
-                player.rotation.y = Math.atan2(-joystick.x, -joystick.y) + Math.PI; 
-            }
+        if (moveX !== 0 || moveY !== 0) {
+          const speed =
+            ROLES[playerStats.role].speed * (1 + playerStats.dex / 50);
+
+          // Vector de movimiento deseado
+          const moveVec = new THREE.Vector3(moveX, 0, moveY)
+            .normalize()
+            .multiplyScalar(speed);
+
+          // Predicción de posición
+          const nextPos = player.position.clone().add(moveVec);
+
+          // Chequear colisiones antes de mover
+          if (!checkCollisions(nextPos)) {
+            player.position.add(moveVec);
+          }
+
+          // Rotación suave
+          const targetRotation = Math.atan2(moveX, moveY);
+          // Interpolación simple de rotación (lerp no es ideal para ángulos pero sirve aquí)
+          player.rotation.y = targetRotation; // Directa para respuesta rápida
+
+          // Huellas
+          if (Math.random() > 0.95) {
+            const footprint = new THREE.Mesh(
+              new THREE.CircleGeometry(0.15, 6),
+              new THREE.MeshBasicMaterial({
+                color: 0x222222,
+                transparent: true,
+                opacity: 0.5,
+              })
+            );
+            footprint.rotation.x = -Math.PI / 2;
+            footprint.position.set(player.position.x, 0.02, player.position.z);
+            scene.add(footprint);
+            setTimeout(() => scene.remove(footprint), 5000);
+          }
         }
 
-        // Cámara sigue al jugador - POSICIÓN CORREGIDA
-        camera.position.x = player.position.x;
-        camera.position.z = player.position.z + 8;  // CAMBIADO: 15 → 8 (más cerca)
-        camera.position.y = 12;                     // CAMBIADO: 20 → 12 (más baja)
+        camera.position.set(
+          player.position.x,
+          player.position.y + 20,
+          player.position.z + 15
+        );
         camera.lookAt(player.position);
 
-        handleEnemyAI();
-        updateMinimap();
+        if (playerStats.stamina < 100) playerStats.stamina += 0.3;
+
+        // Lógica Enemigos (Perseguir si cerca)
+        enemies.forEach((en) => {
+          const dist = en.position.distanceTo(player.position);
+          if (dist < 15) {
+            // Perseguir jugador
+            const dir = new THREE.Vector3()
+              .subVectors(player.position, en.position)
+              .normalize();
+            const nextPos = en.position.clone().addScaledVector(dir, 0.05);
+
+            // Evitar superponerse al jugador
+            if (nextPos.distanceTo(player.position) > 1.0) {
+              en.position.copy(nextPos);
+            }
+            en.lookAt(player.position);
+          } else {
+            // Patrullar
+            const dir = new THREE.Vector3()
+              .subVectors(en.userData.targetPos, en.position)
+              .normalize();
+            en.position.addScaledVector(dir, 0.02);
+            if (en.position.distanceTo(en.userData.targetPos) < 2) {
+              en.userData.targetPos.set(
+                (Math.random() - 0.5) * 100,
+                0,
+                (Math.random() - 0.5) * 100
+              );
+            }
+          }
+        });
+
+        // Detección de Campamentos
+        scene.children.forEach((c) => {
+          if (c.userData.isCamp && !c.userData.used && !currentCamp) {
+            if (player.position.distanceTo(c.position) < 3) {
+              currentCamp = c;
+              document
+                .getElementById("quest-notifier")
+                .classList.remove("hidden");
+              document.getElementById("quest-title").innerText =
+                "CAMPAMENTO DE PODER";
+              document.getElementById("quest-desc").innerText =
+                "Absorber el poder de este lugar aumentará tu nivel y estadísticas drásticamente.";
+            }
+          }
+        });
 
         renderer.render(scene, camera);
-    }
+        updateHUD();
+      }
 
-    window.onload = init;
-    window.addEventListener('resize', () => {
+      window.onload = initScene;
+      window.addEventListener("resize", () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-
-</script>
-</body>
+      });
+    </script>
+  </body>
 </html>
