@@ -343,6 +343,8 @@
       let scene, camera, renderer, player, clock;
       let enemies = [];
       let worldSize = 120;
+      let MAP_SIZE = 100;
+      let obstacles = [];
       let isGameRunning = false;
       let currentCamp = null;
       let keys = {};
@@ -388,13 +390,15 @@
 
       function initScene() {
         scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x0a0a0a);
-        scene.fog = new THREE.FogExp2(0x0a0a0a, 0.04);
+        scene.background = new THREE.Color(0x000000);
+        //scene.fog = new THREE.Fog(0x000000, 24, 33);
+        const amb = new THREE.AmbientLight(0xffffff, 0.02); 
+        scene.add(amb);
         camera = new THREE.PerspectiveCamera(
           60,
           window.innerWidth / window.innerHeight,
           0.1,
-          1000
+          150 // Aumentamos el far plane para ver más horizonte
         );
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -402,48 +406,71 @@
         document.body.appendChild(renderer.domElement);
 
         // Luces
-        const amb = new THREE.AmbientLight(0xffffff, 0.2);
-        scene.add(amb);
-        const dir = new THREE.DirectionalLight(0xffaa00, 0.8);
-        dir.position.set(50, 100, 20);
-        dir.castShadow = true;
-        scene.add(dir);
-
+        //const amb = new THREE.AmbientLight(0xffffff, 0.02); 
+        //scene.add(amb);
         createWorld();
         setupInput();
       }
 
       function createWorld() {
-        const floorGeo = new THREE.PlaneGeometry(worldSize, worldSize);
-        const floorMat = new THREE.MeshStandardMaterial({
-          color: 0x111111,
-          roughness: 0.8,
+        const groundGeo = new THREE.PlaneGeometry(MAP_SIZE, MAP_SIZE);
+        const groundMat = new THREE.MeshStandardMaterial({ 
+            color: 0x1a3317,
+            roughness: 0.8,
+            metalness: 0.2
         });
-        const floor = new THREE.Mesh(floorGeo, floorMat);
-        floor.rotation.x = -Math.PI / 2;
-        scene.add(floor);
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        scene.add(ground);
+        createObstacles();
 
         // Grid decorativo
-        const grid = new THREE.GridHelper(worldSize, 20, 0x333333, 0x222222);
-        grid.position.y = 0.01;
-        scene.add(grid);
+        //const grid = new THREE.GridHelper(worldSize, 20, 0x333333, 0x222222);
+        //grid.position.y = 0.01;
+        //scene.add(grid);
 
         // Obstáculos
-        for (let i = 0; i < 40; i++) {
-          const h = 4 + Math.random() * 6;
-          const w = 2 + Math.random() * 2;
-          const m = new THREE.Mesh(
-            new THREE.BoxGeometry(w, h, w),
-            new THREE.MeshStandardMaterial({ color: 0x222222 })
-          );
-          m.position.set(
-            (Math.random() - 0.5) * worldSize,
-            h / 2,
-            (Math.random() - 0.5) * worldSize
-          );
-          m.userData = { isObstacle: true, radius: w / 1.5 }; // Para colisiones
-          scene.add(m);
+      function createObstacles() {
+        // Crear 100 obstáculos aleatorios
+        for (let i = 0; i < 100; i++) {
+          const isTree = Math.random() > 0.3;
+          const x = (Math.random() - 0.5) * (MAP_SIZE - 10);
+          const z = (Math.random() - 0.5) * (MAP_SIZE - 10);
+          
+          let obstacle;
+          if (isTree) {
+            // Árbol simple (Tronco café y copa verde)
+            obstacle = new THREE.Group();
+            const trunk = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.3, 0.3, 2),
+              new THREE.MeshLambertMaterial({ color: 0x4b3621 })
+            );
+            trunk.position.y = 1;
+            const leaves = new THREE.Mesh(
+              new THREE.ConeGeometry(1.2, 3, 8),
+              new THREE.MeshLambertMaterial({ color: 0x0b6623 })
+            );
+            leaves.position.y = 3;
+            obstacle.add(trunk, leaves);
+          } else {
+            // Piedra
+            obstacle = new THREE.Mesh(
+              new THREE.DodecahedronGeometry(1),
+              new THREE.MeshLambertMaterial({ color: 0x808080 })
+            );
+            obstacle.position.y = 0.5;
+            obstacle.scale.set(Math.random() + 0.5, 0.5, Math.random() + 0.5);
+          }
+
+          obstacle.position.set(x, 0, z);
+          obstacle.userData = { isObstacle: true, radius: 1.2 };
+          
+          scene.add(obstacle);
+          
+          // Guardar para colisiones (radio aproximado de 1.2 unidades)
+         obstacles.push({ position: obstacle.position, radius: 1.2 });
         }
+      }
 
         for (let i = 0; i < 8; i++)
           spawnCamp(
@@ -500,20 +527,37 @@
         group.add(head);
 
         // Barra de vida para enemigos
-        if (isEnemy) {
+       if (isEnemy) {
+          const hpContainer = new THREE.Group();
+          
+          // Fondo Negro (Borde)
+          const bgWidth = 1.2;
+          const bgHeight = 0.25;
           const hpBg = new THREE.Mesh(
-            new THREE.PlaneGeometry(1, 0.1),
+            new THREE.PlaneGeometry(bgWidth, bgHeight),
             new THREE.MeshBasicMaterial({ color: 0x000000 })
           );
-          hpBg.position.set(0, 2.2, 0);
-          group.add(hpBg);
+          hpContainer.add(hpBg);
+
+          // Barra Roja (Frente)
+          const fgWidth = 1.1; 
+          const fgHeight = 0.15;
+          const hpGeometry = new THREE.PlaneGeometry(fgWidth, fgHeight);
+          hpGeometry.translate(fgWidth / 2, 0, 0); 
+
           const hpFg = new THREE.Mesh(
-            new THREE.PlaneGeometry(1, 0.1),
+            hpGeometry,
             new THREE.MeshBasicMaterial({ color: 0xff0000 })
           );
-          hpFg.position.set(0, 2.2, 0.01);
+          hpFg.position.set(-fgWidth / 2, 0, 0.01); 
+          hpContainer.add(hpFg);
+
+          // Guardar referencias en el enemigo
           group.userData.hpBar = hpFg;
-          group.add(hpFg);
+          group.userData.hpContainer = hpContainer; 
+
+          // IMPORTANTE: Se añade a la escena, NO al enemigo
+          scene.add(hpContainer);
         }
 
         group.position.set(
@@ -523,20 +567,19 @@
         );
 
         if (isEnemy) {
-          // Stats del enemigo (simulando jugadores)
-          const lvl = 1 + Math.floor(Math.random() * 3);
-          group.userData = {
-            isEnemy: true,
-            hp: 80 + lvl * 20,
-            maxHp: 80 + lvl * 20,
-            xpReward: 50 * lvl,
-            targetPos: new THREE.Vector3(
-              (Math.random() - 0.5) * 100,
-              0,
-              (Math.random() - 0.5) * 100
-            ),
-          };
-        }
+  const lvl = 1 + Math.floor(Math.random() * 3);
+
+  group.userData.isEnemy = true;
+  group.userData.hp = 80 + lvl * 20;
+  group.userData.maxHp = 80 + lvl * 20;
+  group.userData.xpReward = 50 * lvl;
+  group.userData.targetPos = new THREE.Vector3(
+    (Math.random() - 0.5) * 100,
+    0,
+    (Math.random() - 0.5) * 100
+  );
+}
+
 
         scene.add(group);
         return group;
@@ -605,6 +648,10 @@
         player = createCharacter(role);
         player.userData.radius = 0.5; // Hitbox del jugador
         playerStats.role = role;
+        // LUZ DE LINTERNA: Intensidad 6 y alcance de 16 metros a la redonda
+        const playerLight = new THREE.PointLight(0xffffff, 6, 16, 1.5);
+        playerLight.position.set(0, 4, 0); // La subimos un poco más para que cubra mejor el suelo
+        player.add(playerLight);
 
         isGameRunning = true;
 
@@ -721,13 +768,18 @@
         playerStats.xp += xpGain;
         showFloatingText(`+${xpGain} ALMAS`, player.position, "gold");
 
+        // NUEVO: Limpiar la barra de vida de la escena
+        if (enemy.userData.hpContainer) {
+          scene.remove(enemy.userData.hpContainer);
+        }
+
         // Eliminar visualmente
         scene.remove(enemy);
         enemies.splice(index, 1);
 
         updateHUD();
 
-        // Respawn (Simulación Multijugador)
+        // Respawn
         setTimeout(() => {
           enemies.push(createCharacter("WARRIOR", true));
         }, 3000);
@@ -871,10 +923,13 @@
 
           // Predicción de posición
           const nextPos = player.position.clone().add(moveVec);
+          const limit = MAP_SIZE / 2 - 1; 
+          nextPos.x = THREE.MathUtils.clamp(nextPos.x, -limit, limit);
+          nextPos.z = THREE.MathUtils.clamp(nextPos.z, -limit, limit);
 
           // Chequear colisiones antes de mover
           if (!checkCollisions(nextPos)) {
-            player.position.add(moveVec);
+            player.position.copy(nextPos); // Usamos copy para aplicar los límites de arriba
           }
 
           // Rotación suave
@@ -910,6 +965,7 @@
 
         // Lógica Enemigos (Perseguir si cerca)
         enemies.forEach((en) => {
+          const oldEnPos = en.position.clone();
           const dist = en.position.distanceTo(player.position);
           if (dist < 15) {
             // Perseguir jugador
@@ -937,6 +993,22 @@
               );
             }
           }
+          obstacles.forEach(obj => {
+            if (en.position.distanceTo(obj.position) < obj.radius) {
+              en.position.copy(oldEnPos);
+            }
+          });
+          // Actualización del HP Container independiente
+          if (en.userData.hpContainer) {
+            // 1. Seguir la posición del enemigo
+            en.userData.hpContainer.position.copy(en.position);
+            en.userData.hpContainer.position.y += 2.5; // Altura sobre la cabeza
+            
+            // 2. Mirar siempre a la cámara (Efecto Billboard perfecto)
+            en.userData.hpContainer.quaternion.copy(camera.quaternion);
+          }
+
+
         });
 
         // Detección de Campamentos
@@ -955,6 +1027,38 @@
           }
         });
 
+        // Optimización visual: Ocultar objetos que la niebla ya tapó
+        const luzAlcance = 16;      // Rango de la linterna (donde ves al enemigo)
+        const rangoInstinto = 25;   // Rango máximo para detectar la barra de vida
+        const umbralVision = 0.5;   // Ángulo de visión (0.5 es un cono de unos 120 grados)
+        const playerDir = new THREE.Vector3();
+        player.getWorldDirection(playerDir);
+
+        scene.children.forEach(obj => {
+          if (obj.userData.isCamp || obj.userData.isObstacle) {
+            const dist = obj.position.distanceTo(player.position);
+            // Se vuelve visible mucho antes de que la luz lo alcance
+            obj.visible = dist < rangoInstinto; 
+          }
+        });
+
+        enemies.forEach((en) => {
+          const dist = en.position.distanceTo(player.position);
+          const estaEnRangoCarga = dist < rangoInstinto;
+          const dirToEnemy = new THREE.Vector3()
+            .subVectors(en.position, player.position)
+            .normalize();
+            const dot = playerDir.dot(dirToEnemy);
+        const estaEnFrente = dot > umbralVision;
+          
+          en.visible = estaEnRangoCarga;
+          en.visible = dist < luzAlcance;
+          if (en.userData.hpContainer) {
+            const puedeDetectarHP = (dist < luzAlcance) || (dist < rangoInstinto && estaEnFrente);
+            en.userData.hpContainer.visible = puedeDetectarHP;
+          }
+        });
+
         renderer.render(scene, camera);
         updateHUD();
       }
@@ -968,3 +1072,5 @@
     </script>
   </body>
 </html>
+
+<!--- ahora la barra del enemigo se resta de derecha a izquierda correctamente.
