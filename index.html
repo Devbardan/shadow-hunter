@@ -482,19 +482,27 @@
 
       function spawnCamp(x, z, id) {
         const group = new THREE.Group();
-        const fire = new THREE.Mesh(
+        const fireBase = new THREE.Mesh(
           new THREE.CylinderGeometry(1.5, 2, 0.5, 8),
-          new THREE.MeshBasicMaterial({ color: 0x442200 })
+          new THREE.MeshStandardMaterial({ 
+            color: 0x333333, 
+            transparent: true, 
+            opacity: 0 // Empezamos invisible
+          })
         );
+        group.add(fireBase);
         const light = new THREE.PointLight(0xff4400, 2, 10);
         light.position.y = 1;
-        group.add(fire);
         group.add(light);
 
         // Partícula de fuego simple
         const flame = new THREE.Mesh(
-          new THREE.SphereGeometry(0.5, 4, 4),
-          new THREE.MeshBasicMaterial({ color: 0xffaa00 })
+          new THREE.SphereGeometry(0.5, 8, 8),
+          new THREE.MeshBasicMaterial({ 
+            color: 0xffaa00, 
+            transparent: true, 
+            opacity: 0 
+          })
         );
         flame.position.y = 0.5;
         group.add(flame);
@@ -1029,30 +1037,81 @@
 
         // Optimización visual: Ocultar objetos que la niebla ya tapó
         const luzAlcance = 16;      // Rango de la linterna (donde ves al enemigo)
-        const rangoInstinto = 25;   // Rango máximo para detectar la barra de vida
+        const rangoInstinto = 25;   // Rango máximo para detectar la barra de vida y cargar objetos
         const umbralVision = 0.5;   // Ángulo de visión (0.5 es un cono de unos 120 grados)
+        
         const playerDir = new THREE.Vector3();
         player.getWorldDirection(playerDir);
 
+       // 1. FILTRO DE ENTORNO Y CAMPAMENTOS
+        // Ajustes de rangos para suavidad total
+        const rangoCargaTecnica = 40; // El motor registra la luz a los 40m (invisible)
+        const rangoInicioVisible = 25; // Empieza a aparecer el brillo a los 25m
+        const rangoBrilloMaximo = 15; // Brillo total a los 15m
+        
         scene.children.forEach(obj => {
-          if (obj.userData.isCamp || obj.userData.isObstacle) {
+          // Obstáculos normales
+          if (obj.userData.isObstacle) {
             const dist = obj.position.distanceTo(player.position);
-            // Se vuelve visible mucho antes de que la luz lo alcance
-            obj.visible = dist < rangoInstinto; 
+            obj.visible = dist < rangoInicioVisible;
+          }
+
+          // Campamentos de Quest
+          if (obj.userData.isCamp) {
+            const dist = obj.position.distanceTo(player.position);
+            const base = obj.children[0]; 
+            const campLight = obj.children[1]; 
+            const flame = obj.children[2];
+
+            // CLAVE: Se vuelve visible mucho antes de empezar a brillar
+            // Esto evita que el renderizador de Three.js "salte" al registrar la luz
+            obj.visible = dist < rangoCargaTecnica; 
+
+            // Cálculo del porcentaje de aparición (0 a 1)
+            let porcentaje = 0;
+            if (dist < rangoInicioVisible) {
+                porcentaje = 1 - ((dist - rangoBrilloMaximo) / (rangoInicioVisible - rangoBrilloMaximo));
+                porcentaje = Math.max(0, Math.min(1, porcentaje)); 
+            }
+
+            // Aplicar efectos suaves si los elementos existen
+            if (!obj.userData.used && campLight) {
+              campLight.intensity = porcentaje * 2;
+              campLight.distance = porcentaje * 15; // El radio del octágono crece desde 0
+            }
+
+            if (flame) {
+              flame.scale.setScalar(Math.max(0.001, porcentaje));
+              if (flame.material) {
+                flame.material.transparent = true;
+                flame.material.opacity = porcentaje;
+              }
+            }
+            
+            if (base && base.traverse) {
+              base.traverse(child => {
+                if (child.isMesh && child.material) {
+                  child.material.transparent = true;
+                  child.material.opacity = porcentaje;
+                }
+              });
+            }
           }
         });
 
+        // 2. FILTRO DE ENEMIGOS E INSTINTO
         enemies.forEach((en) => {
           const dist = en.position.distanceTo(player.position);
-          const estaEnRangoCarga = dist < rangoInstinto;
+          
           const dirToEnemy = new THREE.Vector3()
             .subVectors(en.position, player.position)
             .normalize();
-            const dot = playerDir.dot(dirToEnemy);
-        const estaEnFrente = dot > umbralVision;
+          const dot = playerDir.dot(dirToEnemy);
+          const estaEnFrente = dot > umbralVision;
           
-          en.visible = estaEnRangoCarga;
-          en.visible = dist < luzAlcance;
+          // ¡CORREGIDO! Solo usamos el rangoInstinto (25m) para que no hagan pop en la cara
+          en.visible = dist < rangoInstinto; 
+          
           if (en.userData.hpContainer) {
             const puedeDetectarHP = (dist < luzAlcance) || (dist < rangoInstinto && estaEnFrente);
             en.userData.hpContainer.visible = puedeDetectarHP;
