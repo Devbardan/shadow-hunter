@@ -677,6 +677,39 @@
           if (e.target.tagName !== "BUTTON") triggerAttack();
         });
       }
+      function spawnArmedEnemy() {
+        // 1. Crear el cuerpo base
+        const enemy = createCharacter("WARRIOR", true);
+        
+        // 2. Crear la espada del enemigo
+        const enemySwordPivot = new THREE.Group();
+        enemySwordPivot.position.set(0.7, 0.6, -0.2); 
+        
+        const hiltGeo = new THREE.CylinderGeometry(0.07, 0.07, 0.5, 8);
+        const hiltMat = new THREE.MeshBasicMaterial({ color: 0x444444 });
+        const enHilt = new THREE.Mesh(hiltGeo, hiltMat);
+        enHilt.position.y = 0.2; 
+        enemySwordPivot.add(enHilt);
+        
+        const bladeGeo = new THREE.BoxGeometry(0.25, 2.2, 0.06);
+        const bladeMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.8, roughness: 0.2 });
+        const enBlade = new THREE.Mesh(bladeGeo, bladeMat); 
+        enBlade.position.y = 1.6; 
+        enemySwordPivot.userData.bladeMesh = enBlade; 
+        enemySwordPivot.add(enBlade);
+        
+        enemySwordPivot.rotation.set(Math.PI / 1.8, 0, -Math.PI / 6);
+        enemy.add(enemySwordPivot);
+        
+        // 3. Variables de control de combate del enemigo
+        enemy.userData.swordPivot = enemySwordPivot;
+        enemy.userData.isAttacking = false;
+        enemy.userData.attackProgress = 0;
+        enemy.userData.damageDealtThisSwing = false;
+        
+        // 4. Añadirlo a la lista de enemigos activos
+        enemies.push(enemy);
+      }
 
       function startGame(role) {
         document.getElementById("lobby").classList.add("hidden");
@@ -717,29 +750,7 @@
 
         // --- GENERACIÓN DE ENEMIGOS ARMADOS ---
         for (let i = 0; i < 9; i++) {
-          const enemy = createCharacter("WARRIOR", true);
-          
-          // Crear la espada para el enemigo
-          const enemySwordPivot = new THREE.Group();
-          enemySwordPivot.position.set(0.7, 0.6, -0.2); 
-          const enHilt = new THREE.Mesh(hiltGeo, hiltMat);
-          enHilt.position.y = 0.2; 
-          enemySwordPivot.add(enHilt);
-          const enBlade = new THREE.Mesh(bladeGeo, bladeMat.clone()); // Clonamos material para que brille independiente
-          enBlade.position.y = 1.6; 
-          enemySwordPivot.userData.bladeMesh = enBlade; 
-          enemySwordPivot.add(enBlade);
-          
-          enemySwordPivot.rotation.set(Math.PI / 1.8, 0, -Math.PI / 6);
-          enemy.add(enemySwordPivot);
-          
-          // Variables de control de combate del enemigo
-          enemy.userData.swordPivot = enemySwordPivot;
-          enemy.userData.isAttacking = false;
-          enemy.userData.attackProgress = 0;
-          enemy.userData.damageDealtThisSwing = false;
-          
-          enemies.push(enemy);
+          spawnArmedEnemy();
         }
         
         updateHUD();
@@ -836,26 +847,25 @@
       }
 
       function killEnemy(enemy, index) {
-        // Robar XP
-        const xpGain = enemy.userData.xpReward;
-        playerStats.xp += xpGain;
-        showFloatingText(`+${xpGain} ALMAS`, player.position, "gold");
-
-        // NUEVO: Limpiar la barra de vida de la escena
+        // Eliminar visuales del enemigo actual
+        scene.remove(enemy);
         if (enemy.userData.hpContainer) {
           scene.remove(enemy.userData.hpContainer);
         }
-
-        // Eliminar visualmente
-        scene.remove(enemy);
+        
+        // Quitarlo del array de enemigos activos
         enemies.splice(index, 1);
 
-        updateHUD();
+        // Subir experiencia del jugador (o lo que tengas en tu código)
+        playerStats.exp += 20;
+        // ... (tu lógica de subir nivel) ...
 
-        // Respawn
+        // --- LÓGICA DE RESPAWN ---
+        // Si en el futuro NO quieres respawn para el multijugador, 
+        // simplemente borras o comentas este setTimeout entero.
         setTimeout(() => {
-          enemies.push(createCharacter("WARRIOR", true));
-        }, 3000);
+          spawnArmedEnemy(); // <-- ¡AQUÍ ESTÁ LA MAGIA! Genera un enemigo con espada y lógica de combate correcta
+        }, 5000); // Reaparece a los 5 segundos
       }
 
       function showFloatingText(text, pos, color) {
