@@ -303,7 +303,6 @@
           <div class="relative">
             <button
               id="skill-btn"
-              onpointerdown="event.preventDefault(); triggerDash()"
               class="action-btn skill-btn-style btn-disabled"
             >
               DASH
@@ -316,7 +315,6 @@
           </div>
           <button
             id="attack-btn"
-            onpointerdown="event.preventDefault(); triggerAttack()"
             class="action-btn"
             style="border-color: #ff4400; color: #ff4400"
           >
@@ -1352,6 +1350,44 @@
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
       });
+      // =========================================================
+// SOLUCIÓN MULTITOUCH PARA BOTONES (Ataque y Dash)
+// =========================================================
+const btnAttack = document.getElementById("attack-btn");
+const btnDash = document.getElementById("skill-btn");
+
+function aislarBotonTactil(elemento, accion) {
+  if (!elemento) return;
+
+  // CUANDO PULSAS EL BOTÓN (Móvil)
+  elemento.addEventListener("touchstart", function(e) {
+    e.preventDefault();   // Evita comportamientos raros del navegador
+    e.stopPropagation();  // EVITA que el toque llegue al joystick
+    accion();             // Ejecuta tu ataque o dash
+  }, { passive: false }); // 'passive: false' es obligatorio para que preventDefault funcione en móviles hoy en día
+
+  // CUANDO SUELTAS EL BOTÓN (Móvil)
+  elemento.addEventListener("touchend", function(e) {
+    e.preventDefault();
+    e.stopPropagation();  // EVITA que al soltar el botón, el joystick se reinicie
+  }, { passive: false });
+
+  // PARA QUE SIGA FUNCIONANDO EN PC (Ratón)
+  elemento.addEventListener("mousedown", function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    accion();
+  });
+
+  elemento.addEventListener("mouseup", function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+  });
+}
+
+// Vinculamos los botones a sus funciones
+aislarBotonTactil(btnAttack, triggerAttack);
+aislarBotonTactil(btnDash, triggerDash);
     </script>
   </body>
 </html>
