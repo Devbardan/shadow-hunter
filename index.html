@@ -303,7 +303,7 @@
           <div class="relative">
             <button
               id="skill-btn"
-              onpointerdown="triggerDash()"
+              onpointerdown="event.preventDefault(); triggerDash()"
               class="action-btn skill-btn-style btn-disabled"
             >
               DASH
@@ -316,7 +316,7 @@
           </div>
           <button
             id="attack-btn"
-            onpointerdown="triggerAttack()"
+            onpointerdown="event.preventDefault(); triggerAttack()"
             class="action-btn"
             style="border-color: #ff4400; color: #ff4400"
           >
@@ -993,8 +993,9 @@
         if (isDashing) {
           player.userData.isInvincible = true;
 
-          dashProgress += 0.08; 
-          const currentDashSpeed = 0.7 * (1 - dashProgress); 
+          // <-- VELOCIDAD DE DASH REDUCIDA
+          dashProgress += 0.05; 
+          const currentDashSpeed = 0.5 * (1 - dashProgress); 
 
           const nextPos = player.position.clone().addScaledVector(dashDir, currentDashSpeed);
           const limit = MAP_SIZE / 2 - 1; 
@@ -1024,7 +1025,8 @@
           }
 
         } else if (isMoving) {
-          const speed = ROLES[playerStats.role].speed * (1 + playerStats.dex / 50) * 1.15;
+          // <-- VELOCIDAD DE MOVIMIENTO DEL JUGADOR REDUCIDA
+          const speed = ROLES[playerStats.role].speed * (1 + playerStats.dex / 50) * 0.8;
           const moveVec = new THREE.Vector3(moveX, 0, moveY).normalize().multiplyScalar(speed);
           const nextPos = player.position.clone().add(moveVec);
           const limit = MAP_SIZE / 2 - 1; 
@@ -1060,10 +1062,11 @@
 
         if (playerStats.stamina < 100) playerStats.stamina += 0.3;
 
-        // --- ANIMACIÓN ESPADA JUGADOR (COMPLETA) ---
+        // --- ANIMACIÓN ESPADA JUGADOR ---
         let bodyTwist = 0; 
         if (isAttacking && swordPivot) {
-          const currentAttackSpeed = 0.11; 
+          // <-- VELOCIDAD DE ATAQUE DEL JUGADOR REDUCIDA
+          const currentAttackSpeed = 0.07; 
           attackProgress += currentAttackSpeed;
           const attackDir = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), baseTargetRotation).normalize();
 
@@ -1080,7 +1083,8 @@
             bodyTwist = (Math.PI / 6) - (Math.PI / 2.5) * easeOut;
 
             if (p < 0.6 && !isMoving && !isDashing) { 
-              const lungeSpeed = 0.2;
+              // <-- IMPULSO HACIA ADELANTE REDUCIDO
+              const lungeSpeed = 0.1;
               const nextLungePos = player.position.clone().addScaledVector(attackDir, lungeSpeed);
               if (!checkCollisions(nextLungePos)) player.position.copy(nextLungePos);
             }
@@ -1142,7 +1146,7 @@
 
 
         // ==================================================================
-        // --- LÓGICA DE ENEMIGOS: IA Y NUEVA ANIMACIÓN COMPLETA CORREGIDA ---
+        // --- LÓGICA DE ENEMIGOS: IA Y COMBATE ---
         // ==================================================================
         enemies.forEach((en) => {
           const oldEnPos = en.position.clone();
@@ -1150,11 +1154,11 @@
           let enemyBodyTwist = 0; 
 
           if (en.userData.isAttacking) {
-            en.userData.attackProgress += 0.05; 
+            // <-- VELOCIDAD DE ATAQUE DE ENEMIGOS REDUCIDA
+            en.userData.attackProgress += 0.03; 
             const pTotal = en.userData.attackProgress;
             const pivot = en.userData.swordPivot;
             
-            // <-- SOLUCIÓN 1: El enemigo usa la rotación guardada en lugar de rotar infinitamente
             const baseRot = en.userData.baseRotation !== undefined ? en.userData.baseRotation : en.rotation.y;
             const enemyAttackDir = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), baseRot).normalize();
 
@@ -1171,7 +1175,8 @@
               enemyBodyTwist = (Math.PI / 6) - (Math.PI / 2.5) * easeOut;
 
               if (p < 0.6) { 
-                  const lungeSpeed = 0.18;
+                  // <-- IMPULSO DEL ENEMIGO AL ATACAR REDUCIDO
+                  const lungeSpeed = 0.1;
                   const nextLungePos = en.position.clone().addScaledVector(enemyAttackDir, lungeSpeed);
                   if (nextLungePos.distanceTo(player.position) > 0.8) {
                       en.position.copy(nextLungePos);
@@ -1226,7 +1231,6 @@
               if (pivot.userData.bladeMesh) pivot.userData.bladeMesh.material.emissive.setHex(0x000000);
             }
 
-            // <-- SOLUCIÓN 2: Asignación absoluta en lugar de acumulación relativa (+=)
             en.rotation.y = baseRot + enemyBodyTwist;
 
           } 
@@ -1236,13 +1240,11 @@
               en.userData.attackProgress = 0;
               en.userData.damageDealtThisSwing = false;
               en.lookAt(player.position); 
-              
-              // <-- SOLUCIÓN 3: Guardamos la rotación base inicial del enemigo antes de atacar
               en.userData.baseRotation = en.rotation.y;
-              
             } else {
               const dir = new THREE.Vector3().subVectors(player.position, en.position).normalize();
-              const nextPos = en.position.clone().addScaledVector(dir, 0.04); 
+              // <-- VELOCIDAD DE PERSECUCIÓN ENEMIGA REDUCIDA
+              const nextPos = en.position.clone().addScaledVector(dir, 0.025); 
               if (nextPos.distanceTo(player.position) > 1.0) {
                 en.position.copy(nextPos);
               }
@@ -1250,7 +1252,8 @@
             }
           } else {
             const dir = new THREE.Vector3().subVectors(en.userData.targetPos, en.position).normalize();
-            en.position.addScaledVector(dir, 0.02);
+            // <-- VELOCIDAD DE PATRULLAJE ENEMIGA REDUCIDA
+            en.position.addScaledVector(dir, 0.015);
             if (en.position.distanceTo(en.userData.targetPos) < 2) {
               en.userData.targetPos.set((Math.random() - 0.5) * 100, 0, (Math.random() - 0.5) * 100);
             }
