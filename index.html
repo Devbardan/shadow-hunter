@@ -210,6 +210,23 @@
       </div>
 
       <!-- HUD Móvil -->
+
+      <div id="enemy-alert" class="hidden fixed z-50 w-16 h-16 flex justify-center items-center pointer-events-none animate-bounce" style="filter: drop-shadow(0px 4px 0px rgba(0,0,0,0.4));">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+          <path d="M50,15 L58,28 L75,20 L72,40 L85,50 L72,60 L75,80 L58,72 L50,85 L42,72 L25,80 L28,60 L15,50 L28,40 L25,20 L42,28 Z" 
+                fill="white" 
+                stroke="black" 
+                stroke-width="4" 
+                stroke-linejoin="round" />
+          
+          <g transform="rotate(12, 50, 45)">
+            <path d="M42,5 L58,5 L55,65 L45,65 Z" fill="#ff0000" stroke="black" stroke-width="2.5" />
+            <circle cx="50" cy="85" r="9" fill="#ff0000" stroke="black" stroke-width="2.5" />
+          </g>
+        </svg>
+      </div>
+
+
       <div
         id="hud"
         class="hidden h-full w-full flex flex-col justify-between p-4"
@@ -301,7 +318,7 @@
 
         <!-- Joystick Izquierda -->
         <div id="joystick-container">
-          <div id="joystick"></div>
+          <div id="joystick-knob"></div> 
         </div>
 
         <!-- Botones Derecha -->
@@ -415,77 +432,68 @@
       };
 
 // =========================================================
-// LÓGICA DE JOYSTICK FLOTANTE (Dinámico)
+// LÓGICA DE JOYSTICK FLOTANTE (Dinámico - CORREGIDO CIRCULO)
 // =========================================================
 let joystick = { x: 0, y: 0 };
-let joystickPointerId = null; // Usamos el ID del puntero (dedo o ratón)
+let joystickPointerId = null; 
 let joystickCenter = { x: 0, y: 0 };
 const maxRadius = 40; 
 
 const joyContainer = document.getElementById("joystick-container");
-const joyKnob = document.getElementById("joystick");
+const joyKnob = document.getElementById("joystick-knob");
 
-// 'pointerdown' reacciona al instante sin importar dónde toques
 document.addEventListener("pointerdown", function(e) {
-  // Ignoramos si el toque fue en un botón de acción (Atacar, Dash, etc.)
   if (e.target.closest('.action-btn')) return;
 
-  // Si tocamos en la mitad izquierda y el joystick está libre
   if (e.clientX < window.innerWidth / 2 && joystickPointerId === null) {
-    joystickPointerId = e.pointerId; // Enganchamos este dedo para el joystick
+    joystickPointerId = e.pointerId; 
     joystickCenter = { x: e.clientX, y: e.clientY };
     
-    // Mueve el joystick exactamente debajo del dedo al instante
     joyContainer.style.left = (e.clientX - joyContainer.offsetWidth / 2) + "px";
     joyContainer.style.top = (e.clientY - joyContainer.offsetHeight / 2) + "px";
     joyContainer.style.bottom = "auto";
     joyContainer.style.opacity = "1";
     
+    // <-- CORRECCIÓN AQUÍ: Uso de acentos graves ` ` para template literal
     joyKnob.style.transform = `translate(0px, 0px)`;
   }
 });
 
-// 'pointermove' sigue el rastro sin necesidad de soltar el dedo
 document.addEventListener("pointermove", function(e) {
   if (e.pointerId === joystickPointerId) {
-    e.preventDefault(); // Obligatorio: Evita que el móvil cancele el arrastre
+    e.preventDefault(); 
     
     let dx = e.clientX - joystickCenter.x;
     let dy = e.clientY - joystickCenter.y;
     let distance = Math.sqrt(dx * dx + dy * dy);
     
-    // Limitar el círculo interior al radio máximo
     if (distance > maxRadius) {
       dx = (dx / distance) * maxRadius;
       dy = (dy / distance) * maxRadius;
     }
     
-    // Mover la perilla
+    // <-- CORRECCIÓN AQUÍ: Uso de acentos graves ` ` para template literal
     joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
     
-    // Actualizar las matemáticas para que el jugador se mueva
     joystick.x = dx / maxRadius;
     joystick.y = dy / maxRadius;
   }
 }, { passive: false });
 
 function releaseJoystick(e) {
-  // Si el dedo que se levanta es exactamente el del joystick
   if (e.pointerId === joystickPointerId) {
     joystickPointerId = null;
     joystick.x = 0;
     joystick.y = 0;
     
-    // Devolver al centro
+    // <-- CORRECCIÓN AQUÍ: Uso de acentos graves ` ` para template literal
     joyKnob.style.transform = `translate(0px, 0px)`;
     joyContainer.style.opacity = "0.3";
   }
 }
 
-// Escuchamos cuando sueltas el dedo o te llaman por teléfono (cancel)
 document.addEventListener("pointerup", releaseJoystick);
 document.addEventListener("pointercancel", releaseJoystick);
-
       function toggleFullScreen() {
         if (!document.fullscreenElement) {
           document.documentElement.requestFullscreen().catch((e) => {});
@@ -1057,6 +1065,25 @@ document.addEventListener("pointercancel", releaseJoystick);
         return false;
       }
 
+      function posicionarAlertaEnemigo(posicionEnemigo) {
+        const alertDiv = document.getElementById("enemy-alert");
+        if (!alertDiv) return;
+
+        const vector = posicionEnemigo.clone();
+        vector.y += 4; // Altura sobre la cabeza del enemigo
+        vector.project(camera);
+
+        const halfWidth = window.innerWidth / 2;
+        const halfHeight = window.innerHeight / 2;
+
+        const screenX = vector.x * halfWidth + halfWidth;
+        const screenY = -vector.y * halfHeight + halfHeight;
+
+        alertDiv.style.left = (screenX - alertDiv.offsetWidth / 2) + "px";
+        alertDiv.style.top = (screenY - alertDiv.offsetHeight) + "px";
+        alertDiv.classList.remove("hidden");
+      }
+
       function animate() {
         if (!isGameRunning) return;
         requestAnimationFrame(animate);
@@ -1077,9 +1104,9 @@ document.addEventListener("pointercancel", releaseJoystick);
         if (isDashing) {
           player.userData.isInvincible = true;
 
-          // <-- VELOCIDAD DE DASH REDUCIDA
-          dashProgress += 0.05; 
-          const currentDashSpeed = 0.5 * (1 - dashProgress); 
+          // <-- VELOCIDAD DASH MÁS LENTA Y PESADA
+          dashProgress += 0.04; 
+          const currentDashSpeed = 0.4 * (1 - dashProgress); 
 
           const nextPos = player.position.clone().addScaledVector(dashDir, currentDashSpeed);
           const limit = MAP_SIZE / 2 - 1; 
@@ -1109,8 +1136,8 @@ document.addEventListener("pointercancel", releaseJoystick);
           }
 
         } else if (isMoving) {
-          // <-- VELOCIDAD DE MOVIMIENTO DEL JUGADOR REDUCIDA
-          const speed = ROLES[playerStats.role].speed * (1 + playerStats.dex / 50) * 0.8;
+          // <-- VELOCIDAD CAMINAR JUGADOR MÁS LENTA
+          const speed = ROLES[playerStats.role].speed * (1 + playerStats.dex / 50) * 0.6;
           const moveVec = new THREE.Vector3(moveX, 0, moveY).normalize().multiplyScalar(speed);
           const nextPos = player.position.clone().add(moveVec);
           const limit = MAP_SIZE / 2 - 1; 
@@ -1146,11 +1173,11 @@ document.addEventListener("pointercancel", releaseJoystick);
 
         if (playerStats.stamina < 100) playerStats.stamina += 0.3;
 
-        // --- ANIMACIÓN ESPADA JUGADOR ---
+        // --- ANIMACIÓN ESPADA JUGADOR (COMPLETA) ---
         let bodyTwist = 0; 
         if (isAttacking && swordPivot) {
-          // <-- VELOCIDAD DE ATAQUE DEL JUGADOR REDUCIDA
-          const currentAttackSpeed = 0.07; 
+          // <-- VELOCIDAD ATAQUE JUGADOR MÁS LENTA
+          const currentAttackSpeed = 0.05; 
           attackProgress += currentAttackSpeed;
           const attackDir = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), baseTargetRotation).normalize();
 
@@ -1232,19 +1259,26 @@ document.addEventListener("pointercancel", releaseJoystick);
         // ==================================================================
         // --- LÓGICA DE ENEMIGOS: IA Y COMBATE ---
         // ==================================================================
+        // Variable auxiliar para saber si algún enemigo está atacando y mostrar la alerta
+        let anyEnemyAttacking = false; 
+
         enemies.forEach((en) => {
           const oldEnPos = en.position.clone();
           const dist = en.position.distanceTo(player.position);
           let enemyBodyTwist = 0; 
 
           if (en.userData.isAttacking) {
-            // <-- VELOCIDAD DE ATAQUE DE ENEMIGOS REDUCIDA
-            en.userData.attackProgress += 0.03; 
+            // <-- VELOCIDAD ATAQUE ENEMIGO MÁS LENTA
+            en.userData.attackProgress += 0.025; 
             const pTotal = en.userData.attackProgress;
             const pivot = en.userData.swordPivot;
             
             const baseRot = en.userData.baseRotation !== undefined ? en.userData.baseRotation : en.rotation.y;
             const enemyAttackDir = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), baseRot).normalize();
+
+            // MOSTRAR ALERTA ROJA "!" si está atacando
+            anyEnemyAttacking = true;
+            posicionarAlertaEnemigo(en.position);
 
             if (pTotal <= 0.3) {
               const p = pTotal / 0.3;
@@ -1259,7 +1293,7 @@ document.addEventListener("pointercancel", releaseJoystick);
               enemyBodyTwist = (Math.PI / 6) - (Math.PI / 2.5) * easeOut;
 
               if (p < 0.6) { 
-                  // <-- IMPULSO DEL ENEMIGO AL ATACAR REDUCIDO
+                  // <-- IMPULSO DEL ENEMIGO REDUCIDO
                   const lungeSpeed = 0.1;
                   const nextLungePos = en.position.clone().addScaledVector(enemyAttackDir, lungeSpeed);
                   if (nextLungePos.distanceTo(player.position) > 0.8) {
@@ -1272,7 +1306,8 @@ document.addEventListener("pointercancel", releaseJoystick);
               pivot.rotation.y = (Math.PI / 4) - (Math.PI * 1.5) * easeOut;
               pivot.rotation.x = Math.PI / 2;
               
-              if (pivot.userData.bladeMesh) pivot.userData.bladeMesh.material.emissive.setHex(0xaa0000); 
+              // Ya no brilla en rojo, usamos la alerta "!"
+              // if (pivot.userData.bladeMesh) pivot.userData.bladeMesh.material.emissive.setHex(0xaa0000); 
 
               if (p > 0.4 && !en.userData.damageDealtThisSwing) {
                 en.userData.damageDealtThisSwing = true;
@@ -1328,7 +1363,7 @@ document.addEventListener("pointercancel", releaseJoystick);
             } else {
               const dir = new THREE.Vector3().subVectors(player.position, en.position).normalize();
               // <-- VELOCIDAD DE PERSECUCIÓN ENEMIGA REDUCIDA
-              const nextPos = en.position.clone().addScaledVector(dir, 0.025); 
+              const nextPos = en.position.clone().addScaledVector(dir, 0.018); 
               if (nextPos.distanceTo(player.position) > 1.0) {
                 en.position.copy(nextPos);
               }
@@ -1337,7 +1372,7 @@ document.addEventListener("pointercancel", releaseJoystick);
           } else {
             const dir = new THREE.Vector3().subVectors(en.userData.targetPos, en.position).normalize();
             // <-- VELOCIDAD DE PATRULLAJE ENEMIGA REDUCIDA
-            en.position.addScaledVector(dir, 0.015);
+            en.position.addScaledVector(dir, 0.009);
             if (en.position.distanceTo(en.userData.targetPos) < 2) {
               en.userData.targetPos.set((Math.random() - 0.5) * 100, 0, (Math.random() - 0.5) * 100);
             }
@@ -1354,6 +1389,12 @@ document.addEventListener("pointercancel", releaseJoystick);
             en.userData.hpContainer.quaternion.copy(camera.quaternion);
           }
         });
+        
+        // Si nadie está atacando, ocultamos la alerta "!"
+        if (!anyEnemyAttacking) {
+          const alertDiv = document.getElementById("enemy-alert");
+          if (alertDiv) alertDiv.classList.add("hidden");
+        }
 
         // --- SISTEMAS DE ENTORNO ---
         scene.children.forEach((c) => {
