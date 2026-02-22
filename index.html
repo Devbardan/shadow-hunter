@@ -300,8 +300,8 @@
         <!-- Inferior: Controles Táctiles (Posicionamiento Absoluto) -->
 
         <!-- Joystick Izquierda -->
-        <div id="joystick-container" class="interactive">
-          <div id="joystick-knob"></div>
+        <div id="joystick-container">
+          <div id="joystick"></div>
         </div>
 
         <!-- Botones Derecha -->
@@ -378,7 +378,7 @@
           baseDmg: 15
         }
       };
-      
+
       let scene, camera, renderer, player, clock;
       let enemies = [];
       let worldSize = 120;
@@ -414,104 +414,77 @@
         role: "WARRIOR",
       };
 
-      // =========================================================
+// =========================================================
 // LÓGICA DE JOYSTICK FLOTANTE (Dinámico)
 // =========================================================
 let joystick = { x: 0, y: 0 };
-let joystickTouchId = null; // Para saber qué dedo es el del joystick
+let joystickPointerId = null; // Usamos el ID del puntero (dedo o ratón)
 let joystickCenter = { x: 0, y: 0 };
-const maxRadius = 40; // Rango máximo de movimiento del círculo interior
+const maxRadius = 40; 
 
 const joyContainer = document.getElementById("joystick-container");
 const joyKnob = document.getElementById("joystick");
 
-// Escuchamos los toques en TODA la pantalla
-document.addEventListener("touchstart", function(e) {
-  // Revisamos todos los dedos que acaban de tocar la pantalla
-  for (let i = 0; i < e.changedTouches.length; i++) {
-    const t = e.changedTouches[i];
-    
-    // Si el toque es en la mitad IZQUIERDA de la pantalla y no hay un joystick activo
-    if (t.clientX < window.innerWidth / 2 && joystickTouchId === null) {
-      joystickTouchId = t.identifier; // Guardamos el ID de este dedo en concreto
-      joystickCenter = { x: t.clientX, y: t.clientY };
-      
-      // Teletransportamos el contenedor del joystick al dedo
-      joyContainer.style.left = (t.clientX - joyContainer.offsetWidth / 2) + "px";
-      joyContainer.style.top = (t.clientY - joyContainer.offsetHeight / 2) + "px";
-      joyContainer.style.bottom = "auto"; // Anulamos el bottom del CSS original
-      
-      // Lo hacemos completamente visible
-      joyContainer.style.opacity = "1";
-      
-      // Reiniciamos el centro visual
-      joyKnob.style.transform = `translate(0px, 0px)`;
-    }
-  }
-}, { passive: false });
+// 'pointerdown' reacciona al instante sin importar dónde toques
+document.addEventListener("pointerdown", function(e) {
+  // Ignoramos si el toque fue en un botón de acción (Atacar, Dash, etc.)
+  if (e.target.closest('.action-btn')) return;
 
-document.addEventListener("touchmove", function(e) {
-  for (let i = 0; i < e.changedTouches.length; i++) {
-    const t = e.changedTouches[i];
+  // Si tocamos en la mitad izquierda y el joystick está libre
+  if (e.clientX < window.innerWidth / 2 && joystickPointerId === null) {
+    joystickPointerId = e.pointerId; // Enganchamos este dedo para el joystick
+    joystickCenter = { x: e.clientX, y: e.clientY };
     
-    // Si este dedo es el que controla el joystick
-    if (t.identifier === joystickTouchId) {
-      let dx = t.clientX - joystickCenter.x;
-      let dy = t.clientY - joystickCenter.y;
-      let distance = Math.sqrt(dx * dx + dy * dy);
-      
-      // Limitar el movimiento al radio del contenedor
-      if (distance > maxRadius) {
-        dx = (dx / distance) * maxRadius;
-        dy = (dy / distance) * maxRadius;
-      }
-      
-      // Mover el círculo interior
-      joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
-      
-      // Actualizar variables para el juego
-      joystick.x = dx / maxRadius;
-      joystick.y = dy / maxRadius;
-    }
-  }
-}, { passive: false });
-
-document.addEventListener("touchend", function(e) {
-  for (let i = 0; i < e.changedTouches.length; i++) {
-    const t = e.changedTouches[i];
+    // Mueve el joystick exactamente debajo del dedo al instante
+    joyContainer.style.left = (e.clientX - joyContainer.offsetWidth / 2) + "px";
+    joyContainer.style.top = (e.clientY - joyContainer.offsetHeight / 2) + "px";
+    joyContainer.style.bottom = "auto";
+    joyContainer.style.opacity = "1";
     
-    // Si el dedo que se levanta es el del joystick
-    if (t.identifier === joystickTouchId) {
-      joystickTouchId = null; // Liberamos el joystick
-      joystick.x = 0;
-      joystick.y = 0;
-      
-      // Devolvemos el círculo al centro
-      joyKnob.style.transform = `translate(0px, 0px)`;
-      
-      // Bajamos la opacidad para que no moleste
-      joyContainer.style.opacity = "0.3";
-      
-      // OPCIONAL: Devolverlo a su posición original abajo a la izquierda 
-      // joyContainer.style.left = "40px";
-      // joyContainer.style.top = "auto";
-      // joyContainer.style.bottom = "50px";
-    }
-  }
-}, { passive: false });
-
-// CANCELACIONES DE TOQUE (por si te llaman o minimizas el navegador)
-document.addEventListener("touchcancel", function(e) {
-  for (let i = 0; i < e.changedTouches.length; i++) {
-    if (e.changedTouches[i].identifier === joystickTouchId) {
-      joystickTouchId = null;
-      joystick.x = 0;
-      joystick.y = 0;
-      joyKnob.style.transform = `translate(0px, 0px)`;
-      joyContainer.style.opacity = "0.3";
-    }
+    joyKnob.style.transform = `translate(0px, 0px)`;
   }
 });
+
+// 'pointermove' sigue el rastro sin necesidad de soltar el dedo
+document.addEventListener("pointermove", function(e) {
+  if (e.pointerId === joystickPointerId) {
+    e.preventDefault(); // Obligatorio: Evita que el móvil cancele el arrastre
+    
+    let dx = e.clientX - joystickCenter.x;
+    let dy = e.clientY - joystickCenter.y;
+    let distance = Math.sqrt(dx * dx + dy * dy);
+    
+    // Limitar el círculo interior al radio máximo
+    if (distance > maxRadius) {
+      dx = (dx / distance) * maxRadius;
+      dy = (dy / distance) * maxRadius;
+    }
+    
+    // Mover la perilla
+    joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+    
+    // Actualizar las matemáticas para que el jugador se mueva
+    joystick.x = dx / maxRadius;
+    joystick.y = dy / maxRadius;
+  }
+}, { passive: false });
+
+function releaseJoystick(e) {
+  // Si el dedo que se levanta es exactamente el del joystick
+  if (e.pointerId === joystickPointerId) {
+    joystickPointerId = null;
+    joystick.x = 0;
+    joystick.y = 0;
+    
+    // Devolver al centro
+    joyKnob.style.transform = `translate(0px, 0px)`;
+    joyContainer.style.opacity = "0.3";
+  }
+}
+
+// Escuchamos cuando sueltas el dedo o te llaman por teléfono (cancel)
+document.addEventListener("pointerup", releaseJoystick);
+document.addEventListener("pointercancel", releaseJoystick);
 
       function toggleFullScreen() {
         if (!document.fullscreenElement) {
